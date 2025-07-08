@@ -9,50 +9,63 @@ DROP TABLE IF EXISTS users;
 
 -- Drop ENUM type if it exists
 DROP TYPE IF EXISTS bill_type;
+DROP TYPE IF EXISTS invite_status_type;
 
 -- Create users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
     first_name TEXT,
     last_name TEXT,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL
 );
 
-CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- Create apartments table
-CREATE TABLE apartments (
+CREATE TABLE IF NOT EXISTS apartments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    name TEXT,
-    address TEXT,
-    unit_number INTEGER,
+    deleted_at TIMESTAMPTZ,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    unit_number INTEGER NOT NULL,
     admin_id UUID NOT NULL, 
-    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- Create enum type for invite status
+CREATE TYPE IF NOT EXISTS invite_status_type AS ENUM ('pending', 'accepted', 'declined');
+
 -- Create junction table for many-to-many relationship between users and apartments
-CREATE TABLE users_apartments (
+CREATE TABLE IF NOT EXISTS users_apartments (
     user_id UUID NOT NULL,
     apartment_id UUID NOT NULL,
     PRIMARY KEY (user_id, apartment_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
+    invite_status invite_status_type NOT NULL DEFAULT 'pending',
+    invite_token TEXT UNIQUE NOT NULL,
+    invite_expires_at TIMESTAMPTZ NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
 -- Create enum type for bills
-CREATE TYPE bill_type AS ENUM ('electricity', 'water', 'gas');
+CREATE TYPE IF NOT EXISTS bill_type AS ENUM ('electricity', 'water', 'gas');
 
 -- Create bills table
-CREATE TABLE bills (
+CREATE TABLE IF NOT EXISTS bills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
     name TEXT,
     bill_type bill_type NOT NULL,
     bill_id INTEGER NOT NULL, 
@@ -60,6 +73,6 @@ CREATE TABLE bills (
     due_date DATE NOT NULL,
     image_id UUID,
     apartment_id UUID NOT NULL,
-    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE
+    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
