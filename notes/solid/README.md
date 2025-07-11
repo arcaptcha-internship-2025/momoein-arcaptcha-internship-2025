@@ -15,10 +15,10 @@ Reduce complexity by ensuring each class focuses on a single responsibility.
 **Example:**
 
 **before SRP:**  
-![](./before-SRP.png)
+![](assets/before-SRP.png)
 
 **after SRP:**  
-![](./after-SRP.png)
+![](assets/after-SRP.png)
 
 **Golang**
 
@@ -88,14 +88,14 @@ If a class is already developed, tested, reviewed, and included in some framewor
 You have an e-commerce application with an Order class that calculates shipping costs and all shipping methods are hardcoded inside the class. If you need to add a new shipping method, you have to change the code of the Order class and risk breaking it.
 
 **before OCP:**  
-![](./before-OCP.png)
+![](assets/before-OCP.png)
 
 You can solve the problem by applying the Strategy pattern. Start
 by extracting shipping methods into separate classes with a com-
 mon interface.
 
 **after OCP:**  
-![](./after-OCP.png)
+![](assets/after-OCP.png)
 
 Now when you need to implement a new shipping method, you can derive a new class from the **Shipping** interface without touching any of the **Order** class code. The client code of the **Order** class will link orders with a shipping object of the new class whenever the user selects this shipping methods in the UI.
 
@@ -536,10 +536,10 @@ Abstractions should not depend on details. Details should depend on abstractions
 **Example:**
 
 **before DIP:**  
-![](./defore-DIP.png)
+![](assets/defore-DIP.png)
 
 **after DIP:**  
-![](./after-DIP.png)
+![](assets/after-DIP.png)
 
 **Golang:**
 
