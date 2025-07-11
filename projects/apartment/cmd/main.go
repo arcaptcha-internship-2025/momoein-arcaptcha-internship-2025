@@ -1,0 +1,35 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"os"
+
+	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
+	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
+)
+
+var configPath = flag.String("config", "config.json", "configuration file path, it must be json")
+
+func main() {
+	flag.Parse()
+
+	if v := os.Getenv("CONFIG_FILE"); len(v) > 0 {
+		*configPath = v
+	}
+	cfg := config.MustReadJson(*configPath)
+
+	appLogger := logger.NewZapLogger(logger.ModeProduction)
+	if cfg.AppMode == config.Development {
+		appLogger = logger.NewZapLogger(logger.ModeDevelopment)
+	}
+	defer appLogger.Sync()
+
+	ctx := appctx.New(context.Background(), appctx.WithLogger(appLogger))
+
+	appContaner := app.MustNew(ctx, cfg)
+	_ = appContaner
+	// TODO: http server and APIs
+}
