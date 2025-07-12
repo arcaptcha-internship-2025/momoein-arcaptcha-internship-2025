@@ -39,18 +39,19 @@ func New(ctx context.Context, cfg config.Config) (App, error) {
 	}
 
 	return &app{
-		db: db,
+		cfg:    cfg,
+		db:     db,
 		logger: appctx.Logger(ctx),
 	}, nil
 }
 
-func (a *app) Config(ctx context.Context) config.Config {
+func (a *app) Config() config.Config {
 	return a.cfg
 }
 
-func (a *app) Logger(ctx context.Context) *logger.Logger {
+func (a *app) Logger() *logger.Logger {
 	return a.logger
 }
-func (a *app) DB(ctx context.Context) *sql.DB {
+func (a *app) DB() *sql.DB {
 	return a.db
 }

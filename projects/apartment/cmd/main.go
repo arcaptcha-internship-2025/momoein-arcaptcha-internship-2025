@@ -5,10 +5,12 @@ import (
 	"flag"
 	"os"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
+	"go.uber.org/zap"
 )
 
 var configPath = flag.String("config", "config.json", "configuration file path, it must be json")
@@ -29,7 +31,7 @@ func main() {
 
 	ctx := appctx.New(context.Background(), appctx.WithLogger(appLogger))
 
-	appContaner := app.MustNew(ctx, cfg)
-	_ = appContaner
-	// TODO: http server and APIs
+	appContainer := app.MustNew(ctx, cfg)
+	appLogger.Info("Application started")
+	appLogger.Fatal("", zap.Error(handler.Run(appContainer)))
 }

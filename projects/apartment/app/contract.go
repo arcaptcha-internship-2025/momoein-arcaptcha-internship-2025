@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
@@ -9,7 +8,7 @@ import (
 )
 
 type App interface {
-	Config(ctx context.Context) config.Config
-	Logger(ctx context.Context) *logger.Logger
-	DB(ctx context.Context) *sql.DB
+	Config() config.Config
+	Logger() *logger.Logger
+	DB() *sql.DB
 }
