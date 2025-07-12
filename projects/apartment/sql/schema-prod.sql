@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS bills (
     deleted_at TIMESTAMPTZ,
     name TEXT NOT NULL,
     bill_type bill_type NOT NULL,
-    bill_id INTEGER NOT NULL,
+    bill_id INTEGER UNIQUE NOT NULL,
     amount INTEGER NOT NULL CHECK (amount >= 0),
     due_date DATE NOT NULL,
     image_id UUID,
