@@ -10,6 +10,7 @@ import (
 func Run(app app.App) error {
 	r := NewRouter()
 	r.Use(firstMiddleware)
+	RegisterAPI(r, app)
 
 	addr := fmt.Sprintf(":%d", app.Config().HTTP.Port)
 	app.Logger().Info("listen on: " + addr)
@@ -24,7 +25,7 @@ func RegisterAPI(r *Router, app app.App) {
 				next.ServeHTTP(w, r)
 			})
 		})
-		r.HandleFunc("GET /group", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Get("/group", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("hello group\n"))
 		}))
 	})
@@ -32,13 +33,13 @@ func RegisterAPI(r *Router, app app.App) {
 	r.Group(func(r *Router) {
 		r.Use(secondMiddleware)
 
-		r.HandleFunc("GET /admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Get("/admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("hello group\n"))
 		}))
 	})
 
 	mwChain := chain{firstMiddleware, secondMiddleware}
-	r.Handle(fmt.Sprintf("%s %s", http.MethodGet, "/"), mwChain.Then(myHandler()))
+	r.Get("/", mwChain.Then(myHandler()))
 }
 
 func myHandler() http.Handler {
