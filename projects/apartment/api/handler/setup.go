@@ -10,7 +10,7 @@ import (
 func Run(app app.App) error {
 	mux := http.NewServeMux()
 
-	mwChain := Chain(firstMiddleware, secondMiddleware)
+	mwChain := chain{firstMiddleware, secondMiddleware}
 
 	mux.Handle(fmt.Sprintf("%s %s", http.MethodGet, "/"), mwChain.Then(myHandler()))
 
