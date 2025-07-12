@@ -8,15 +8,37 @@ import (
 )
 
 func Run(app app.App) error {
-	mux := http.NewServeMux()
-
-	mwChain := chain{firstMiddleware, secondMiddleware}
-
-	mux.Handle(fmt.Sprintf("%s %s", http.MethodGet, "/"), mwChain.Then(myHandler()))
+	r := NewRouter()
+	r.Use(firstMiddleware)
 
 	addr := fmt.Sprintf(":%d", app.Config().HTTP.Port)
 	app.Logger().Info("listen on: " + addr)
-	return http.ListenAndServe(addr, mux)
+	return http.ListenAndServe(addr, r)
+}
+
+func RegisterAPI(r *Router, app app.App) {
+	r.Group(func(r *Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("group first middleware\n"))
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.HandleFunc("GET /group", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("hello group\n"))
+		}))
+	})
+
+	r.Group(func(r *Router) {
+		r.Use(secondMiddleware)
+
+		r.HandleFunc("GET /admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("hello group\n"))
+		}))
+	})
+
+	mwChain := chain{firstMiddleware, secondMiddleware}
+	r.Handle(fmt.Sprintf("%s %s", http.MethodGet, "/"), mwChain.Then(myHandler()))
 }
 
 func myHandler() http.Handler {
@@ -25,7 +47,6 @@ func myHandler() http.Handler {
 	}
 	return http.HandlerFunc(fn)
 }
-
 
 func firstMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
