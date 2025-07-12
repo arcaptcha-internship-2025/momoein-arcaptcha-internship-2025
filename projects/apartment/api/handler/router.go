@@ -24,13 +24,14 @@ func (r *Router) Use(mw ...func(http.Handler) http.Handler) {
 	r.globalChain = append(r.globalChain, mw...)
 }
 
-func (r *Router) Group(fn func(*Router)) {
+func (r *Router) Group(fn func(*Router)) *Router {
 	subRouter := &Router{
 		routeChain: slices.Clone(r.routeChain),
 		isSubRoute: true,
 		ServeMux:   r.ServeMux,
 	}
 	fn(subRouter)
+	return subRouter
 }
 
 func (r *Router) HandleFunc(pattern string, h http.HandlerFunc) {

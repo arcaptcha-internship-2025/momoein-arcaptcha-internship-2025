@@ -30,13 +30,18 @@ func RegisterAPI(r *Router, app app.App) {
 		}))
 	})
 
-	r.Group(func(r *Router) {
+	adminRoute := r.Group(func(r *Router) {
 		r.Use(secondMiddleware)
 
 		r.Get("/admin", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("hello group\n"))
 		}))
 	})
+
+	adminRoute.Use(secondMiddleware)
+	adminRoute.Get("/admin/profile", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(fmt.Sprintf("%s\n", r.URL.Path)))
+	}))
 
 	mwChain := chain{firstMiddleware, secondMiddleware}
 	r.Get("/", mwChain.Then(myHandler()))
