@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"regexp"
+	"slices"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -40,7 +41,7 @@ type User struct {
 }
 
 func (u *User) Password() []byte {
-	return u.password
+	return slices.Clone(u.password)
 }
 
 func (u *User) SetPassword(pass []byte) ([]byte, error) {
