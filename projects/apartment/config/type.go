@@ -20,6 +20,7 @@ type DBConfig struct {
 	Schema   string `json:"schema"`
 	User     string `json:"user"`
 	Password string `json:"password"`
+	AppName  string `json:"appName"`
 }
 
 type HTTPConfig struct {

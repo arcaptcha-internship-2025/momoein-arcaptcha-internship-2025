@@ -26,12 +26,13 @@ func MustNew(ctx context.Context, cfg config.Config) App {
 
 func New(ctx context.Context, cfg config.Config) (App, error) {
 	opt := postgres.DBConnOptions{
-		User:   cfg.DB.User,
-		Pass:   cfg.DB.Password,
-		Host:   cfg.DB.Host,
-		Port:   cfg.DB.Port,
-		DBName: cfg.DB.DBName,
-		Schema: cfg.DB.Schema,
+		User:    cfg.DB.User,
+		Pass:    cfg.DB.Password,
+		Host:    cfg.DB.Host,
+		Port:    cfg.DB.Port,
+		DBName:  cfg.DB.DBName,
+		Schema:  cfg.DB.Schema,
+		AppName: cfg.DB.AppName,
 	}
 	db, err := postgres.NewPSQLConn(opt)
 	if err != nil {
