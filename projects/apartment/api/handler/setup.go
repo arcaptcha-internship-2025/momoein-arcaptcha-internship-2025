@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/middleware"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
 )
 
 func Run(app app.App) error {
 	r := router.NewRouter()
+	r.Use(middleware.GetLogRequest(app.Logger()))
 
 	api := r.Group("/api/v1", func(r *router.Router) {})
 	RegisterAPI(api, app)
