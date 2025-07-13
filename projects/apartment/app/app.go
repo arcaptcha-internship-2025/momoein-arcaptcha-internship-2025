@@ -5,15 +5,19 @@ import (
 	"database/sql"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
+	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/postgres"
 )
 
 type app struct {
-	cfg    config.Config
-	logger *logger.Logger
-	db     *sql.DB
+	cfg         config.Config
+	logger      *logger.Logger
+	db          *sql.DB
+	userService userPort.Service
 }
 
 func MustNew(ctx context.Context, cfg config.Config) App {
@@ -55,4 +59,11 @@ func (a *app) Logger() *logger.Logger {
 }
 func (a *app) DB() *sql.DB {
 	return a.db
+}
+
+func (a *app) UserService(ctx context.Context) userPort.Service {
+	if a.userService == nil {
+		a.userService = user.NewService(storage.NewUserRepo(a.db))
+	}
+	return a.userService
 }

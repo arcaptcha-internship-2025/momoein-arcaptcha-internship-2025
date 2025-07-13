@@ -18,7 +18,7 @@ type service struct {
 	repo port.Repo
 }
 
-func NewService(r port.Repo) *service {
+func NewService(r port.Repo) port.Service {
 	return &service{repo: r}
 }
 
@@ -31,4 +31,12 @@ func (s *service) Create(ctx context.Context, u *domain.User) (*domain.User, err
 		return nil, fmt.Errorf("%w: %w", ErrUserOnCreate, err)
 	}
 	return user, nil
+}
+
+func (s *service) Get(context.Context, *domain.UserFilter) (*domain.User, error) {
+	panic("unimplemented")
+}
+
+func (s *service) Delete(context.Context, *domain.UserFilter) error {
+	panic("unimplemented")
 }
