@@ -1,4 +1,4 @@
-package handler
+package router
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 )
 
 type Router struct {
-	globalChain chain
-	routeChain  chain
+	globalChain Chain
+	routeChain  Chain
 	prefix      string
 	isSubRoute  bool
 	*http.ServeMux

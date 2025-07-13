@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
 )
 
 func Run(app app.App) error {
-	r := NewRouter()
-	api := r.Group("/api/v1", func(r *Router) {})
+	r := router.NewRouter()
+
+	api := r.Group("/api/v1", func(r *router.Router) {})
 	RegisterAPI(api, app)
 
 	addr := fmt.Sprintf(":%d", app.Config().HTTP.Port)
@@ -17,8 +19,8 @@ func Run(app app.App) error {
 	return http.ListenAndServe(addr, r)
 }
 
-func RegisterAPI(r *Router, app app.App) {
-	r.Group("/auth", func(r *Router) {
+func RegisterAPI(r *router.Router, app app.App) {
+	r.Group("/auth", func(r *router.Router) {
 		r.Post("/sing-up", getSignUpHandler())
 	})
 }
