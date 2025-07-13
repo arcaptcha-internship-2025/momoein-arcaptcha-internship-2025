@@ -3,12 +3,14 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"path"
 	"slices"
 )
 
 type Router struct {
 	globalChain chain
 	routeChain  chain
+	prefix      string
 	isSubRoute  bool
 	*http.ServeMux
 }
@@ -24,9 +26,10 @@ func (r *Router) Use(mw ...func(http.Handler) http.Handler) {
 	r.globalChain = append(r.globalChain, mw...)
 }
 
-func (r *Router) Group(fn func(*Router)) *Router {
+func (r *Router) Group(groupPrefix string, fn func(*Router)) *Router {
 	subRouter := &Router{
 		routeChain: slices.Clone(r.routeChain),
+		prefix:     path.Join(r.prefix, groupPrefix),
 		isSubRoute: true,
 		ServeMux:   r.ServeMux,
 	}
@@ -50,7 +53,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 }
 
 func (r *Router) Method(method, pattern string, h http.Handler) {
-	r.Handle(fmt.Sprintf("%s %s", method, pattern), h)
+	fullPattern := path.Clean(r.prefix + pattern)
+	r.Handle(fmt.Sprintf("%s %s", method, fullPattern), h)
 }
 
 func (r *Router) Connect(pattern string, h http.Handler) {
