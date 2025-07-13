@@ -56,3 +56,23 @@ func getFileEncoderConfig() zapcore.EncoderConfig {
 	cfg.TimeKey = "timestamp"
 	return cfg
 }
+
+func NewConsoleZapLogger(mode Mode) *zap.Logger {
+	logLevel := zap.InfoLevel
+	if mode == ModeDevelopment {
+		logLevel = zap.DebugLevel
+	}
+
+	level := zap.NewAtomicLevelAt(logLevel)
+	consoleEncoder := zapcore.NewConsoleEncoder(getConsoleEncoderConfig())
+	stdout := zapcore.AddSync(os.Stdout)
+
+	core := zapcore.NewCore(consoleEncoder, stdout, level)
+
+	opts := []zap.Option{zap.AddCaller()}
+	if mode == ModeDevelopment {
+		opts = append(opts, zap.Development())
+	}
+
+	return zap.New(core, opts...)
+}
