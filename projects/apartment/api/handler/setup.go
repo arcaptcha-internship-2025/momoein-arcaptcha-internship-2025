@@ -12,8 +12,9 @@ import (
 func Run(app app.App) error {
 	r := router.NewRouter()
 	r.Use(middleware.GetLogRequest(app.Logger()))
+	r.Get("/", getRootHandler())
 
-	api := r.Group("/api/v1", func(r *router.Router) {})
+	api := r.Group("/api/v1", nil)
 	RegisterAPI(api, app)
 
 	addr := fmt.Sprintf(":%d", app.Config().HTTP.Port)

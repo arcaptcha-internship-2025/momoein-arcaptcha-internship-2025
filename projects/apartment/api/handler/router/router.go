@@ -33,7 +33,9 @@ func (r *Router) Group(groupPrefix string, fn func(*Router)) *Router {
 		isSubRoute: true,
 		ServeMux:   r.ServeMux,
 	}
-	fn(subRouter)
+	if fn != nil {
+		fn(subRouter)
+	}
 	return subRouter
 }
 
