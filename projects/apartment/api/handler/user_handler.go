@@ -59,7 +59,7 @@ func getSignUpHandler(service userPort.Service) http.Handler {
 			Name:     "token",
 			Value:    token,
 			HttpOnly: true,
-			Path:     r.URL.Path,
+			Path:     "/",
 		})
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusCreated)
