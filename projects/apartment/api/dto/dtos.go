@@ -15,22 +15,21 @@ type User struct {
 	Password  string `json:"password"`
 }
 
-type SingUpRequest struct {
+type SignUpRequest struct {
 	FirstName string `json:"firstName,omitempty"`
 	LastName  string `json:"lastName,omitempty"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 }
 
-type SingUpResponse struct {
+type SignUpResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
-	Error        Error  `json:"error"`
 }
 
-type SingInRequest struct{}
+type SignInRequest struct{}
 
-type SingInResponse struct{}
+type SignInResponse struct{}
 
 type Apartment struct {
 	ID          string    `json:"id"`
@@ -48,7 +47,6 @@ type AddApartmentRequest struct {
 }
 type AddApartmentResponse struct {
 	Apartment Apartment `json:"apartment"`
-	Error     Error     `json:"error"`
 }
 
 type ListUserApartmentsRequest struct{}
@@ -61,40 +59,32 @@ type RemoveApartmentRequest struct {
 	Apartment Apartment
 }
 type RemoveApartmentResponse struct {
-	Error Error `json:"error"`
 }
 
 type InviteUserToApartmentRequest struct{}
 type InviteUserToApartmentResponse struct {
-	Error Error `json:"error"`
 }
 
 type RemoveUserFromApartmentRequest struct{}
 type RemoveUserFromApartmentResponse struct {
-	Error Error `json:"error"`
 }
 
 type ListApartmentUsersRequest struct{}
 type ListApartmentUsersResponse struct {
-	Error Error `json:"error"`
 }
 
 type AddBillRequest struct{}
 type AddBillResponse struct {
-	Error Error `json:"error"`
 }
 
 type RemoveBillRequest struct{}
 type RemoveBillResponse struct {
-	Error Error `json:"error"`
 }
 
 type SendBillNotificationToUsersRequest struct{}
 type SendBillNotificationToUsersResponse struct {
-	Error Error `json:"error"`
 }
 
 type CalculateUserBillRequest struct{}
 type CalculateUserBillResponse struct {
-	Error Error `json:"error"`
 }

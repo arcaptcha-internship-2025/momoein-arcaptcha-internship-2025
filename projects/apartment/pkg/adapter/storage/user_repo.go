@@ -3,12 +3,17 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage/types"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"go.uber.org/zap"
+)
+
+var (
+	ErrUserAlreadyExists = errors.New("user with this email already exists")
 )
 
 type userRepo struct {
@@ -24,7 +29,11 @@ func (r *userRepo) Create(ctx context.Context, ud *userDomain.User) (*userDomain
 	u := types.UserDomainToStorage(ud)
 
 	// Prepare the SQL statement with RETURNING id
-	stmt, err := r.db.PrepareContext(ctx, `INSERT INTO users(email, password) VALUES($1, $2) RETURNING id;`)
+	stmt, err := r.db.PrepareContext(ctx, `
+		INSERT INTO users(email, password) 
+		VALUES($1, $2) 
+		ON CONFLICT (email) DO NOTHING 
+		RETURNING id;`)
 	if err != nil {
 		appctx.Logger(ctx).Error("failed to prepare insert user statement", zap.Error(err))
 		return nil, err
@@ -35,15 +44,19 @@ func (r *userRepo) Create(ctx context.Context, ud *userDomain.User) (*userDomain
 	var id string
 	err = stmt.QueryRowContext(ctx, u.Email, u.Password).Scan(&id)
 	if err != nil {
-		appctx.Logger(ctx).Error("failed to execute insert statement", zap.Error(err))
-		return nil, err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			appctx.Logger(ctx).Error("failed to execute statement", zap.Error(ErrUserAlreadyExists))
+			return nil, ErrUserAlreadyExists
+		default:
+			appctx.Logger(ctx).Error("failed to execute statement", zap.Error(err))
+			return nil, err
+		}
 	}
 
 	u.ID = id
 	return types.UserStorageToDomain(u), nil
 }
-
-
 
 func (r *userRepo) Get(context.Context, *userDomain.UserFilter) (*userDomain.User, error) {
 	panic("unimplemented")
