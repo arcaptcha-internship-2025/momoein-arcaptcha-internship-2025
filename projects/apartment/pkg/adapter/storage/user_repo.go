@@ -24,7 +24,7 @@ func (r *userRepo) Create(ctx context.Context, ud *userDomain.User) (*userDomain
 	u := types.UserDomainToStorage(ud)
 
 	// Prepare the SQL statement with RETURNING id
-	stmt, err := r.db.PrepareContext(ctx, `INSERT INTO user(email, password) VALUES($1, $2) RETURNING id;`)
+	stmt, err := r.db.PrepareContext(ctx, `INSERT INTO users(email, password) VALUES($1, $2) RETURNING id;`)
 	if err != nil {
 		appctx.Logger(ctx).Error("failed to prepare insert user statement", zap.Error(err))
 		return nil, err
