@@ -44,8 +44,13 @@ func (u *User) Password() []byte {
 	return slices.Clone(u.password)
 }
 
-func (u *User) SetPassword(pass []byte) ([]byte, error) {
-	return bcrypt.GenerateFromPassword(pass, 12)
+func (u *User) SetPassword(pass []byte) error {
+	p, err := bcrypt.GenerateFromPassword(pass, 12)
+	if err != nil {
+		return err
+	}
+	u.password = p
+	return nil
 }
 
 func (u *User) ComparePassword(pass []byte) {
