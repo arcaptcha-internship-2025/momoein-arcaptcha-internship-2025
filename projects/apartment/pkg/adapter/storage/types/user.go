@@ -38,7 +38,7 @@ func UserStorageToDomain(u *User) *userDomain.User {
 	if err := uuid.Validate(u.ID); err == nil {
 		id = uuid.MustParse(u.ID)
 	}
-	return userDomain.New(
+	return userDomain.NewUser(
 		id, u.Email, u.Password,
 		u.FirstName.String, u.LastName.String,
 	)

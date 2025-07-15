@@ -40,11 +40,11 @@ type User struct {
 	LastName  string
 }
 
-func New(id UserID, email, pass, firstName, lastName string) *User {
+func NewUser(id UserID, email, pass, firstName, lastName string) *User {
 	return &User{
 		ID:        id,
 		Email:     Email(email),
-		password:  []byte(email),
+		password:  []byte(pass),
 		FirstName: firstName,
 		LastName:  lastName,
 	}
@@ -63,8 +63,8 @@ func (u *User) SetPassword(pass []byte) error {
 	return nil
 }
 
-func (u *User) ComparePassword(pass []byte) {
-	bcrypt.CompareHashAndPassword(u.password, pass)
+func (u *User) ComparePassword(pass []byte) error {
+	return bcrypt.CompareHashAndPassword(u.password, pass)
 }
 
 func (u *User) Validate() error {
