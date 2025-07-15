@@ -3,6 +3,7 @@ package config
 type Config struct {
 	AppMode AppModeType `json:"appMode"`
 	DB      DBConfig    `json:"db"`
+	HTTP    HTTPConfig  `json:"http"`
 }
 
 type AppModeType string
@@ -19,4 +20,9 @@ type DBConfig struct {
 	Schema   string `json:"schema"`
 	User     string `json:"user"`
 	Password string `json:"password"`
+	AppName  string `json:"appName"`
+}
+
+type HTTPConfig struct {
+	Port uint `json:"port"`
 }
