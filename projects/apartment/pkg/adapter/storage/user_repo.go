@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage/types"
@@ -15,7 +16,8 @@ import (
 var (
 	ErrUserAlreadyExists = errors.New("user with this email already exists")
 	ErrInvalidFilter     = errors.New("no valid filter provided")
-) 
+)
+
 type userRepo struct {
 	db *sql.DB
 }
@@ -81,6 +83,10 @@ func (r *userRepo) Get(
 	err := r.db.QueryRowContext(ctx, query, args...).
 		Scan(&u.ID, &u.Email, &u.Password, &u.FirstName, &u.LastName)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn("user not found", zap.Any("filter", filter))
+			return nil, user.ErrUserNotFound
+		}
 		log.Error("failed to query user", zap.Error(err))
 		return nil, err
 	}
