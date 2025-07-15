@@ -22,15 +22,15 @@ type SignUpRequest struct {
 	Password  string `json:"password"`
 }
 
-type SignUpResponse struct {
+type SignInRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }
-
-type SignInRequest struct{}
-
-type SignInResponse struct{}
-
 type Apartment struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`

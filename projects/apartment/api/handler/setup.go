@@ -25,7 +25,8 @@ func Run(app app.App) error {
 
 func RegisterAPI(r *router.Router, app app.App) {
 	r.Group("/auth", func(r *router.Router) {
-		r.Post("/sing-up", getSignUpHandler(app.UserService(context.Background())))
+		r.Post("/sign-up", getSignUpHandler(context.Background(), app.UserService(context.Background())))
+		r.Get("/sign-in", getSignInHandler(context.Background(), app.UserService(context.Background())))
 	})
 }
 

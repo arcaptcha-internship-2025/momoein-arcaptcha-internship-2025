@@ -10,10 +10,11 @@ import (
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
-	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
+	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 var (
@@ -21,8 +22,10 @@ var (
 	ErrInternalServer = errors.New("internal server error")
 )
 
-func getSignUpHandler(service userPort.Service) http.Handler {
+func getSignUpHandler(ctx context.Context, service userPort.Service) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(ctx)
+
 		var req dto.SignUpRequest
 		body := r.Body
 		decoder := json.NewDecoder(body)
@@ -32,7 +35,7 @@ func getSignUpHandler(service userPort.Service) http.Handler {
 		}
 
 		u, err := service.Create(context.Background(),
-			UserDTOToDomain(&dto.User{Email: req.Email, Password: req.Password}))
+			dto.UserDTOToDomain(&dto.User{Email: req.Email, Password: req.Password}))
 		if err != nil {
 			switch {
 			case errors.Is(err, user.ErrUserOnValidate):
@@ -45,42 +48,72 @@ func getSignUpHandler(service userPort.Service) http.Handler {
 			return
 		}
 
-		token, err := GenerateJWT([]byte("secret"), u.Email.String())
+		token, err := GenerateJWT(secret, u.Email.String())
 		if err != nil {
 			e := fmt.Errorf("%w: %w", ErrInternalServer, err)
 			http.Error(w, e.Error(), http.StatusInternalServerError)
 		}
-
-		resp := &dto.SignUpResponse{
-			AccessToken: token,
+		resp, err := json.Marshal(&dto.AuthResponse{AccessToken: token})
+		if err != nil {
+			log.Error("failed to marshal response", zap.Error(err))
+			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
-		bResp, _ := json.Marshal(resp)
-		http.SetCookie(w, &http.Cookie{
-			Name:     "token",
-			Value:    token,
-			HttpOnly: true,
-			Path:     "/",
-		})
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+
+		SetContentTypeJson(w)
+		SetTokenCookie(w, token)
 		w.WriteHeader(http.StatusCreated)
-		w.Write(bResp)
+		w.Write(resp)
 	})
 }
 
-func UserDTOToDomain(u *dto.User) *userDomain.User {
-	id, err := uuid.FromBytes([]byte(u.ID))
-	if err != nil {
-		id = userDomain.NilID
-	}
-	user := &userDomain.User{
-		ID:        id,
-		Email:     userDomain.Email(u.Email),
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
-	}
-	user.SetPassword([]byte(u.Password))
-	return user
+func getSignInHandler(ctx context.Context, s userPort.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(ctx)
+
+		var req dto.SignInRequest
+		if err := BodyParse(r, &req); err != nil {
+			http.Error(w, ErrBadRequest.Error(), http.StatusBadRequest)
+			return
+		}
+
+		u, err := s.Get(ctx, &domain.UserFilter{Email: domain.Email(req.Email)})
+		if err != nil {
+			switch {
+			case errors.Is(err, user.ErrUserNotFound):
+				http.Error(w, user.ErrUserNotFound.Error(), http.StatusNotFound)
+				return
+			default:
+				e := fmt.Errorf("%w: %w", ErrInternalServer, err)
+				http.Error(w, e.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		if err := u.ComparePassword([]byte(req.Password)); err != nil {
+			log.Warn("compare password", zap.String("password", req.Password), zap.Error(err))
+			http.Error(w, "incorrect password", http.StatusUnauthorized)
+			return
+		}
+
+		token, err := GenerateJWT(secret, req.Email)
+		if err != nil {
+			log.Error("failed to generate jwt token", zap.Error(err))
+			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
+
+		resp, err := json.Marshal(&dto.AuthResponse{AccessToken: token})
+		if err != nil {
+			log.Error("failed to marshal response", zap.Error(err))
+			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
+
+		SetContentTypeJson(w)
+		SetTokenCookie(w, token)
+		w.WriteHeader(http.StatusOK)
+		w.Write(resp)
+	})
 }
+
+var secret = []byte("this-is-very-secret")
 
 func GenerateJWT(secret []byte, email string) (string, error) {
 	claims := jwt.MapClaims{
@@ -88,4 +121,22 @@ func GenerateJWT(secret []byte, email string) (string, error) {
 		"exp":   time.Now().Add(time.Hour * 2).Unix(),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS512, claims).SignedString(secret)
+}
+
+func BodyParse(r *http.Request, dest any) error {
+	decoder := json.NewDecoder(r.Body)
+	return decoder.Decode(&dest)
+}
+
+func SetContentTypeJson(w http.ResponseWriter) {
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+}
+
+func SetTokenCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Path:     "/",
+	})
 }
