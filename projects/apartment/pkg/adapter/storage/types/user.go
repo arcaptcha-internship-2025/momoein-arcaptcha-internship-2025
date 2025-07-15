@@ -2,6 +2,7 @@ package types
 
 import (
 	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
+	"github.com/google/uuid"
 )
 
 type User struct {
@@ -23,12 +24,9 @@ func UserDomainToStorage(u *userDomain.User) *User {
 }
 
 func UserStorageToDomain(u *User) *userDomain.User {
-	user := &userDomain.User{
-		ID:        userDomain.UserID([]byte(u.ID)),
-		Email:     userDomain.Email(u.Email),
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
+	var id = uuid.Nil
+	if err := uuid.Validate(u.ID); err == nil {
+		id = uuid.MustParse(u.ID)
 	}
-	user.SetPassword([]byte(u.Password))
-	return user
+	return userDomain.New(id, u.Email, u.Password, u.FirstName, u.LastName)
 }
