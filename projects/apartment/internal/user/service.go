@@ -10,8 +10,11 @@ import (
 )
 
 var (
-	ErrUserOnValidate = errors.New("user validation failed")
-	ErrUserOnCreate   = errors.New("user Creation failed")
+	ErrUserOnValidate     = errors.New("user validation failed")
+	ErrUserOnCreate       = errors.New("user Creation failed")
+	ErrInvalidOrNilFilter = errors.New("invalid or empty filter")
+	ErrUserOnGet          = errors.New("user retrieve failed")
+	ErrUserOnDelete       = errors.New("error on deleting failed")
 )
 
 type service struct {
@@ -33,10 +36,24 @@ func (s *service) Create(ctx context.Context, u *domain.User) (*domain.User, err
 	return user, nil
 }
 
-func (s *service) Get(context.Context, *domain.UserFilter) (*domain.User, error) {
-	panic("unimplemented")
+func (s *service) Get(ctx context.Context, filter *domain.UserFilter) (*domain.User, error) {
+	if !filter.IsValid() {
+		return nil, ErrInvalidOrNilFilter
+	}
+	u, err := s.repo.Get(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrUserOnGet, err)
+	}
+	return u, nil
 }
 
-func (s *service) Delete(context.Context, *domain.UserFilter) error {
-	panic("unimplemented")
+func (s *service) Delete(ctx context.Context, filter *domain.UserFilter) error {
+	if !filter.IsValid() {
+		return ErrInvalidOrNilFilter
+	}
+	err := s.repo.Delete(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrUserOnDelete, err)
+	}
+	return nil
 }

@@ -40,6 +40,16 @@ type User struct {
 	LastName  string
 }
 
+func New(id UserID, email, pass, firstName, lastName string) *User {
+	return &User{
+		ID:        id,
+		Email:     Email(email),
+		password:  []byte(email),
+		FirstName: firstName,
+		LastName:  lastName,
+	}
+}
+
 func (u *User) Password() []byte {
 	return slices.Clone(u.password)
 }
