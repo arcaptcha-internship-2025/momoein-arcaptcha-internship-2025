@@ -15,6 +15,7 @@ var (
 	ErrInvalidOrNilFilter = errors.New("invalid or empty filter")
 	ErrUserOnGet          = errors.New("user retrieve failed")
 	ErrUserOnDelete       = errors.New("error on deleting failed")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 type service struct {
