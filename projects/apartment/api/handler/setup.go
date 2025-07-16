@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -12,7 +11,10 @@ import (
 
 func Run(app app.App) error {
 	r := router.NewRouter()
-	r.Use(middleware.GetLogRequest(app.Logger()))
+	r.Use(
+		middleware.SetRequestContext(app),
+		middleware.LogRequest(),
+	)
 	r.Get("/", getRootHandler())
 
 	api := r.Group("/api/v1", nil)
@@ -25,8 +27,8 @@ func Run(app app.App) error {
 
 func RegisterAPI(r *router.Router, app app.App) {
 	r.Group("/auth", func(r *router.Router) {
-		r.Post("/sign-up", getSignUpHandler(context.Background(), app.UserService(context.Background())))
-		r.Get("/sign-in", getSignInHandler(context.Background(), app.UserService(context.Background())))
+		r.Post("/sign-up", getSignUpHandler(UserServiceGetter(app)))
+		r.Get("/sign-in", getSignInHandler(UserServiceGetter(app)))
 	})
 }
 
