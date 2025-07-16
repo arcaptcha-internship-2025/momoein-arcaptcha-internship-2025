@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,9 +21,9 @@ var (
 	ErrInternalServer = errors.New("internal server error")
 )
 
-func getSignUpHandler(ctx context.Context, service userPort.Service) http.Handler {
+func getSignUpHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log := appctx.Logger(ctx)
+		log := appctx.Logger(r.Context())
 
 		var req dto.SignUpRequest
 		body := r.Body
@@ -34,7 +33,8 @@ func getSignUpHandler(ctx context.Context, service userPort.Service) http.Handle
 			return
 		}
 
-		u, err := service.Create(context.Background(),
+		service := svcGetter(r.Context())
+		u, err := service.Create(r.Context(),
 			dto.UserDTOToDomain(&dto.User{Email: req.Email, Password: req.Password}))
 		if err != nil {
 			switch {
@@ -66,9 +66,9 @@ func getSignUpHandler(ctx context.Context, service userPort.Service) http.Handle
 	})
 }
 
-func getSignInHandler(ctx context.Context, s userPort.Service) http.Handler {
+func getSignInHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log := appctx.Logger(ctx)
+		log := appctx.Logger(r.Context())
 
 		var req dto.SignInRequest
 		if err := BodyParse(r, &req); err != nil {
@@ -76,7 +76,8 @@ func getSignInHandler(ctx context.Context, s userPort.Service) http.Handler {
 			return
 		}
 
-		u, err := s.Get(ctx, &domain.UserFilter{Email: domain.Email(req.Email)})
+		service := svcGetter(r.Context())
+		u, err := service.Get(r.Context(), &domain.UserFilter{Email: domain.Email(req.Email)})
 		if err != nil {
 			switch {
 			case errors.Is(err, user.ErrUserNotFound):
