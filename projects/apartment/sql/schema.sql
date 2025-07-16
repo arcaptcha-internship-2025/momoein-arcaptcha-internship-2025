@@ -2,6 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Drop tables if they already exist
+DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS bills;
 DROP TABLE IF EXISTS users_apartments;
 DROP TABLE IF EXISTS apartments;
@@ -10,6 +11,7 @@ DROP TABLE IF EXISTS users;
 -- Drop ENUM type if it exists
 DROP TYPE IF EXISTS bill_type;
 DROP TYPE IF EXISTS invite_status_type;
+DROP TYPE IF EXISTS bill_status_type;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
@@ -60,6 +62,8 @@ CREATE TABLE IF NOT EXISTS users_apartments (
 -- Create enum type for bills
 CREATE TYPE IF NOT EXISTS bill_type AS ENUM ('electricity', 'water', 'gas');
 
+CREATE TYPE IF NOT EXISTS bill_status_type AS ENUM ('unpaid', 'paid', 'overdue');
+
 -- Create bills table
 CREATE TABLE IF NOT EXISTS bills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -70,9 +74,23 @@ CREATE TABLE IF NOT EXISTS bills (
     bill_type bill_type NOT NULL,
     bill_id INTEGER UNIQUE NOT NULL, 
     amount INTEGER,
+    status bill_status_type NOT NULL DEFAULT 'unpaid',
+    paid_at TIMESTAMPTZ,
     due_date DATE NOT NULL,
     image_id UUID,
     apartment_id UUID NOT NULL,
     FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
+    bill_id UUID NOT NULL,
+    payer_id UUID NOT NULL,
+    amount INTEGER NOT NULL,
+    payment_date TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (payer_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
