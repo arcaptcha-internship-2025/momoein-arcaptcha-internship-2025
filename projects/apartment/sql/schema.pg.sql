@@ -44,7 +44,8 @@ END IF;
 END $$;
 -- Create junction table for many-to-many relationship between users and apartments
 CREATE TABLE IF NOT EXISTS users_apartments (
-    user_id UUID NOT NULL,
+    user_id UUID, -- Nullable now
+    email TEXT NOT NULL, -- Used to invite non-registered users
     apartment_id UUID NOT NULL,
     PRIMARY KEY (user_id, apartment_id),
     created_at TIMESTAMPTZ DEFAULT now(),
