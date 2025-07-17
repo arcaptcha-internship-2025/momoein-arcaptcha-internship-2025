@@ -40,7 +40,7 @@ type Invite struct {
 }
 
 type ApartmentMember struct {
-	User   domain.User
+	domain.User
 	Invite Invite
 	Debt   int64
 }
@@ -50,10 +50,20 @@ type Apartment struct {
 	Name       string
 	Address    string
 	UnitNumber int64
-	Admin      domain.User
+	AdminID    common.ID
 	Members    []ApartmentMember
 	Bills      []Bill
 }
+
+func (a *Apartment) Validate() error {
+	return nil
+}
+
+type ApartmentFilter struct {
+	ID common.ID
+}
+
+
 
 type BillType string
 
