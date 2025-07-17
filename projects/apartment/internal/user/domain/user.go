@@ -2,9 +2,9 @@ package domain
 
 import (
 	"errors"
-	"regexp"
 	"slices"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,24 +17,13 @@ var (
 
 type (
 	UserID = uuid.UUID
-	Email  string
 )
 
 var NilID = UserID{}
 
-func (e Email) IsValid() bool {
-	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	r := regexp.MustCompile(emailRegex)
-	return r.Match([]byte(e))
-}
-
-func (e Email) String() string {
-	return string(e)
-}
-
 type User struct {
 	ID        UserID
-	Email     Email
+	Email     common.Email
 	password  []byte
 	FirstName string
 	LastName  string
@@ -43,7 +32,7 @@ type User struct {
 func NewUser(id UserID, email, pass, firstName, lastName string) *User {
 	return &User{
 		ID:        id,
-		Email:     Email(email),
+		Email:     common.Email(email),
 		password:  []byte(pass),
 		FirstName: firstName,
 		LastName:  lastName,
@@ -82,7 +71,7 @@ func (u *User) Validate() error {
 
 type UserFilter struct {
 	ID    UserID
-	Email Email
+	Email common.Email
 }
 
 func (f *UserFilter) IsValid() bool {

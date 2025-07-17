@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage/types"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
@@ -26,7 +27,7 @@ func TestUserRepo_Create(t *testing.T) {
 
 	// Step 3: Create a user domain object
 	user := &userDomain.User{
-		Email: userDomain.Email(email),
+		Email: common.Email(email),
 	}
 	user.SetPassword([]byte(password)) // sets internal password
 	require.NoError(t, err)

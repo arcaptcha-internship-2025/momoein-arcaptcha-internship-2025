@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
@@ -77,7 +78,7 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 		}
 
 		service := svcGetter(r.Context())
-		u, err := service.Get(r.Context(), &domain.UserFilter{Email: domain.Email(req.Email)})
+		u, err := service.Get(r.Context(), &domain.UserFilter{Email: common.Email(req.Email)})
 		if err != nil {
 			switch {
 			case errors.Is(err, user.ErrUserNotFound):
