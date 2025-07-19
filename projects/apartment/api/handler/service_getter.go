@@ -16,8 +16,8 @@ func UserServiceGetter(app app.App) ServiceGetter[userPort.Service] {
 	}
 }
 
-func ApartmentService(a app.App) ServiceGetter[apartmentPort.Service] {
+func ApartmentServiceGetter(a app.App) ServiceGetter[apartmentPort.Service] {
 	return func(ctx context.Context) apartmentPort.Service {
-		return nil
+		return a.ApartmentService(ctx)
 	}
 }
