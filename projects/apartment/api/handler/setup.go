@@ -26,9 +26,18 @@ func Run(app app.App) error {
 }
 
 func RegisterAPI(r *router.Router, app app.App) {
+	secret := []byte(app.Config().Auth.JWTSecret)
+
 	r.Group("/auth", func(r *router.Router) {
-		r.Post("/sign-up", getSignUpHandler(UserServiceGetter(app)))
-		r.Get("/sign-in", getSignInHandler(UserServiceGetter(app)))
+		r.Post("/sign-up", getSignUpHandler(UserServiceGetter(app), app.Config().Auth))
+		r.Get("/sign-in", getSignInHandler(UserServiceGetter(app), app.Config().Auth))
+	})
+
+	r.Group("/apartment", func(r *router.Router) {
+		r.Use(middleware.NewAuth(secret))
+
+		svcGetter := ApartmentServiceGetter(app)
+		r.Post("/", AddApartment(svcGetter))
 	})
 }
 
