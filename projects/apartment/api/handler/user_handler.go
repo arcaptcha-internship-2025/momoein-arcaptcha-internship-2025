@@ -1,18 +1,19 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
+	appjwt "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/jwt"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 )
@@ -22,14 +23,12 @@ var (
 	ErrInternalServer = errors.New("internal server error")
 )
 
-func getSignUpHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
+func getSignUpHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
 		var req dto.SignUpRequest
-		body := r.Body
-		decoder := json.NewDecoder(body)
-		if err := decoder.Decode(&req); err != nil {
+		if err := BodyParse(r, &req); err != nil {
 			http.Error(w, ErrBadRequest.Error(), http.StatusBadRequest)
 			return
 		}
@@ -49,27 +48,23 @@ func getSignUpHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 			return
 		}
 
-		token, err := GenerateJWT(secret, u.Email.String())
+		authResp, err := GenerateAuthResponse(cfg, u.ID.String(), u.Email.String())
 		if err != nil {
-			e := fmt.Errorf("%w: %w", ErrInternalServer, err)
-			http.Error(w, e.Error(), http.StatusInternalServerError)
-			return
-		}
-		resp, err := json.Marshal(&dto.AuthResponse{AccessToken: token})
-		if err != nil {
-			log.Error("failed to marshal response", zap.Error(err))
-			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+			log.Error("failed to generate jwt token", zap.Error(err))
+			Error(w, r, http.StatusInternalServerError, "InternalServerError", err.Error())
 			return
 		}
 
-		SetContentTypeJson(w)
-		SetTokenCookie(w, token)
-		w.WriteHeader(http.StatusCreated)
-		w.Write(resp)
+		SetTokenCookie(w, cfg, authResp.AccessToken, authResp.RefreshToken)
+
+		if err = WriteJson(w, http.StatusCreated, authResp); err != nil {
+			log.Error("failed to write response", zap.Error(err))
+			Error(w, r, http.StatusInternalServerError, "InternalServerError", err.Error())
+		}
 	})
 }
 
-func getSignInHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
+func getSignInHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
@@ -93,55 +88,76 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 		}
 
 		if err := u.ComparePassword([]byte(req.Password)); err != nil {
-			log.Warn("compare password", zap.String("password", req.Password), zap.Error(err))
-			http.Error(w, "incorrect password", http.StatusUnauthorized)
+			log.Warn("password comparison failed", zap.Error(err))
+			http.Error(w, "invalid credentials", http.StatusUnauthorized)
 			return
 		}
 
-		token, err := GenerateJWT(secret, req.Email)
+		authResp, err := GenerateAuthResponse(cfg, u.ID.String(), u.Email.String())
 		if err != nil {
 			log.Error("failed to generate jwt token", zap.Error(err))
-			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
-			return 
-		}
-
-		resp, err := json.Marshal(&dto.AuthResponse{AccessToken: token})
-		if err != nil {
-			log.Error("failed to marshal response", zap.Error(err))
-			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+			Error(w, r, http.StatusInternalServerError, "InternalServerError", err.Error())
 			return
 		}
 
-		SetContentTypeJson(w)
-		SetTokenCookie(w, token)
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
+		SetTokenCookie(w, cfg, authResp.AccessToken, authResp.RefreshToken)
+
+		if err = WriteJson(w, http.StatusCreated, authResp); err != nil {
+			log.Error("failed to write response", zap.Error(err))
+			Error(w, r, http.StatusInternalServerError, "InternalServerError", err.Error())
+		}
 	})
 }
 
-var secret = []byte("this-is-very-secret")
-
-func GenerateJWT(secret []byte, email string) (string, error) {
-	claims := jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(time.Hour * 2).Unix(),
+func GenerateAuthResponse(cfg config.AuthConfig, id, email string) (*dto.AuthResponse, error) {
+	accessToken, err := createJWTToken(cfg.JWTSecret, id, email, cfg.AccessExpiry)
+	if err != nil {
+		return nil, err
 	}
-	return jwt.NewWithClaims(jwt.SigningMethodHS512, claims).SignedString(secret)
+	refreshToken, err := createJWTToken(cfg.JWTSecret, id, email, cfg.RefreshExpiry)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
-func BodyParse(r *http.Request, dest any) error {
-	decoder := json.NewDecoder(r.Body)
-	return decoder.Decode(&dest)
+func createJWTToken(secret, userId, userEmail string, exp int64) (string, error) {
+	return appjwt.CreateToken([]byte(secret), &appjwt.UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{
+				Time: time.Now().Add(time.Minute * time.Duration(exp))},
+			IssuedAt: &jwt.NumericDate{
+				Time: time.Now(),
+			},
+		},
+		UserID:    userId,
+		UserEMail: userEmail,
+	})
 }
 
-func SetContentTypeJson(w http.ResponseWriter) {
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
-}
-
-func SetTokenCookie(w http.ResponseWriter, token string) {
+func SetTokenCookie(
+	w http.ResponseWriter,
+	cfg config.AuthConfig,
+	accessToken, refreshToken string,
+) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
+		Name:     "access-token",
+		Value:    accessToken,
+		Expires:  time.Now().Add(time.Minute * time.Duration(cfg.AccessExpiry)),
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		HttpOnly: true,
+		Path:     "/",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh-token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(time.Minute * time.Duration(cfg.RefreshExpiry)),
+		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
 		HttpOnly: true,
 		Path:     "/",
 	})
