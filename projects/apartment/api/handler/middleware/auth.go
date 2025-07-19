@@ -11,12 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	UserEmailKey appctx.CtxKey = "UserEmail"
-	UserIDKey    appctx.CtxKey = "UserID"
-)
-
-func GetAuth(secret []byte) router.Middleware {
+func NewAuth(secret []byte) router.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log := appctx.Logger(r.Context())
@@ -40,8 +35,8 @@ func GetAuth(secret []byte) router.Middleware {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
-			ctx = context.WithValue(ctx, UserEmailKey, claims.UserMail)
+			ctx := context.WithValue(r.Context(), appjwt.UserIDKey, claims.UserID)
+			ctx = context.WithValue(ctx, appjwt.UserEmailKey, claims.UserEMail)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

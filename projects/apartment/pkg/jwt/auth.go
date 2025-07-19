@@ -3,6 +3,7 @@ package appjwt
 import (
 	"errors"
 
+	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -11,10 +12,15 @@ var (
 	ErrInvalidToken = errors.New("token is not valid")
 )
 
+const (
+	UserEmailKey appctx.CtxKey = "UserEmail"
+	UserIDKey    appctx.CtxKey = "UserID"
+)
+
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UserID   string
-	UserMail string
+	UserID    string
+	UserEMail string
 }
 
 func CreateToken(secret []byte, claims *UserClaims) (string, error) {
