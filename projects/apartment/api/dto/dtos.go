@@ -1,7 +1,5 @@
 package dto
 
-import "time"
-
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -32,21 +30,11 @@ type AuthResponse struct {
 	RefreshToken string `json:"refreshToken"`
 }
 type Apartment struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	BillType    string    `json:"billType"`
-	BillId      uint      `json:"billId"`
-	Amount      uint      `json:"amount"`
-	DueDate     time.Time `json:"dueDate"`
-	ImageId     string    `json:"imageId"`
-	ApartmentId string    `json:"apartmentId"`
-}
-
-type AddApartmentRequest struct {
-	Apartment Apartment `json:"apartment"`
-}
-type AddApartmentResponse struct {
-	Apartment Apartment `json:"apartment"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Address    string `json:"address"`
+	UnitNumber int64  `json:"unitNumber"`
+	AdminID    string `json:"adminID"`
 }
 
 type ListUserApartmentsRequest struct{}
