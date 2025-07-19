@@ -53,11 +53,13 @@ func getSignUpHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 		if err != nil {
 			e := fmt.Errorf("%w: %w", ErrInternalServer, err)
 			http.Error(w, e.Error(), http.StatusInternalServerError)
+			return
 		}
 		resp, err := json.Marshal(&dto.AuthResponse{AccessToken: token})
 		if err != nil {
 			log.Error("failed to marshal response", zap.Error(err))
 			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		SetContentTypeJson(w)
@@ -83,11 +85,11 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 			switch {
 			case errors.Is(err, user.ErrUserNotFound):
 				http.Error(w, user.ErrUserNotFound.Error(), http.StatusNotFound)
-				return
 			default:
 				e := fmt.Errorf("%w: %w", ErrInternalServer, err)
 				http.Error(w, e.Error(), http.StatusInternalServerError)
 			}
+			return
 		}
 
 		if err := u.ComparePassword([]byte(req.Password)); err != nil {
@@ -100,12 +102,14 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service]) http.Handler {
 		if err != nil {
 			log.Error("failed to generate jwt token", zap.Error(err))
 			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+			return 
 		}
 
 		resp, err := json.Marshal(&dto.AuthResponse{AccessToken: token})
 		if err != nil {
 			log.Error("failed to marshal response", zap.Error(err))
 			http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		SetContentTypeJson(w)
