@@ -5,6 +5,7 @@ type Config struct {
 	DB      DBConfig    `json:"db"`
 	HTTP    HTTPConfig  `json:"http"`
 	Auth    AuthConfig  `json:"auth"`
+	SMTP    SMTPConfig  `json:"smtp"`
 }
 
 type AppModeType string
@@ -30,6 +31,14 @@ type HTTPConfig struct {
 
 type AuthConfig struct {
 	JWTSecret     string `json:"jwtSecret"`
-	AccessExpiry  int64`json:"accessExpiry"`
-	RefreshExpiry int64`json:"refreshExpiry"`
+	AccessExpiry  int64  `json:"accessExpiry"`
+	RefreshExpiry int64  `json:"refreshExpiry"`
+}
+
+type SMTPConfig struct {
+	Host     string `json:"host"`
+	Port     uint   `json:"port"`
+	From     string `json:"from"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
