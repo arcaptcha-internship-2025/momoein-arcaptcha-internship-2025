@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
+	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"go.uber.org/zap"
 )
 
@@ -25,11 +26,12 @@ func (rw *responseRecorder) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
-func GetLogRequest(log *zap.Logger) router.Middleware {
+func LogRequest() router.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
+			log := appctx.Logger(r.Context())
 			log.Info("Incoming request",
 				zap.String("method", r.Method),
 				zap.String("url", r.URL.String()),

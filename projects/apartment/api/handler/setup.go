@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -12,7 +11,10 @@ import (
 
 func Run(app app.App) error {
 	r := router.NewRouter()
-	r.Use(middleware.GetLogRequest(app.Logger()))
+	r.Use(
+		middleware.SetRequestContext(app),
+		middleware.LogRequest(),
+	)
 	r.Get("/", getRootHandler())
 
 	api := r.Group("/api/v1", nil)
@@ -24,8 +26,19 @@ func Run(app app.App) error {
 }
 
 func RegisterAPI(r *router.Router, app app.App) {
+	secret := []byte(app.Config().Auth.JWTSecret)
+
 	r.Group("/auth", func(r *router.Router) {
-		r.Post("/sing-up", getSignUpHandler(app.UserService(context.Background())))
+		r.Post("/sign-up", getSignUpHandler(UserServiceGetter(app), app.Config().Auth))
+		r.Get("/sign-in", getSignInHandler(UserServiceGetter(app), app.Config().Auth))
+	})
+
+	r.Group("/apartment", func(r *router.Router) {
+		r.Use(middleware.NewAuth(secret))
+
+		svcGetter := ApartmentServiceGetter(app)
+		r.Post("/", AddApartment(svcGetter))
+		r.Post("/invite", InviteApartmentMember(svcGetter))
 	})
 }
 

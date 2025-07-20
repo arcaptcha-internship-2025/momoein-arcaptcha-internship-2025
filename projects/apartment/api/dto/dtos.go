@@ -1,6 +1,6 @@
 package dto
 
-import "time"
+import "github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 
 type Error struct {
 	Code    int    `json:"code"`
@@ -22,31 +22,21 @@ type SignUpRequest struct {
 	Password  string `json:"password"`
 }
 
-type SignUpResponse struct {
+type SignInRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }
-
-type SignInRequest struct{}
-
-type SignInResponse struct{}
-
 type Apartment struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	BillType    string    `json:"billType"`
-	BillId      uint      `json:"billId"`
-	Amount      uint      `json:"amount"`
-	DueDate     time.Time `json:"dueDate"`
-	ImageId     string    `json:"imageId"`
-	ApartmentId string    `json:"apartmentId"`
-}
-
-type AddApartmentRequest struct {
-	Apartment Apartment `json:"apartment"`
-}
-type AddApartmentResponse struct {
-	Apartment Apartment `json:"apartment"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Address    string `json:"address"`
+	UnitNumber int64  `json:"unitNumber"`
+	AdminID    string `json:"adminID"`
 }
 
 type ListUserApartmentsRequest struct{}
@@ -61,7 +51,10 @@ type RemoveApartmentRequest struct {
 type RemoveApartmentResponse struct {
 }
 
-type InviteUserToApartmentRequest struct{}
+type InviteUserToApartmentRequest struct {
+	UserEmail   common.Email `json:"userEmail"`
+	ApartmentID common.ID    `json:"apartmentID"`
+}
 type InviteUserToApartmentResponse struct {
 }
 

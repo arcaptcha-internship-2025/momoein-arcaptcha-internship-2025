@@ -12,6 +12,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  smaila:
+    container_name: apartment-smaila-dev
+    image: ghcr.io/cactusbros/smaila:v0.2.2
+    restart: unless-stopped
+    env_file:
+      - .smaila.env
+    ports:
+      - $HTTP_PORT:$HTTP_PORT
+
 volumes:
   postgres_data:
     driver: local

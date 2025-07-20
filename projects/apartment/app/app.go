@@ -5,19 +5,24 @@ import (
 	"database/sql"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
+	apartmentPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/postgres"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/smtp"
 )
 
 type app struct {
-	cfg         config.Config
-	logger      *logger.Logger
-	db          *sql.DB
-	userService userPort.Service
+	cfg              config.Config
+	logger           *logger.Logger
+	db               *sql.DB
+	userService      userPort.Service
+	apartmentService apartmentPort.Service
+	apartmentMail    apartmentPort.Email
 }
 
 func MustNew(ctx context.Context, cfg config.Config) App {
@@ -66,4 +71,22 @@ func (a *app) UserService(ctx context.Context) userPort.Service {
 		a.userService = user.NewService(storage.NewUserRepo(a.db))
 	}
 	return a.userService
+}
+
+func (a *app) ApartmentService(ctx context.Context) apartmentPort.Service {
+	if a.apartmentService == nil {
+		a.apartmentService = apartment.NewService(
+			storage.NewApartmentRepo(a.db),
+			a.mailService(),
+		)
+	}
+	return a.apartmentService
+}
+
+func (a *app) mailService() apartmentPort.Email {
+	c := a.Config().SMTP
+	if a.apartmentMail == nil {
+		a.apartmentMail = smtp.NewSMTPService(c.Host, c.Port, c.From, c.Username, c.Password)
+	}
+	return a.apartmentMail
 }

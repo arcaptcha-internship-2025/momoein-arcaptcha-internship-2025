@@ -15,6 +15,7 @@ var (
 	ErrInvalidOrNilFilter = errors.New("invalid or empty filter")
 	ErrUserOnGet          = errors.New("user retrieve failed")
 	ErrUserOnDelete       = errors.New("error on deleting failed")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 type service struct {
@@ -28,6 +29,9 @@ func NewService(r port.Repo) port.Service {
 func (s *service) Create(ctx context.Context, u *domain.User) (*domain.User, error) {
 	if err := u.Validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrUserOnValidate, err)
+	}
+	if err := u.HashPassword(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrUserOnCreate, err)
 	}
 	user, err := s.repo.Create(ctx, u)
 	if err != nil {

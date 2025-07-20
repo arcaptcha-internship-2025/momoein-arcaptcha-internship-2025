@@ -2,9 +2,9 @@ package domain
 
 import (
 	"errors"
-	"regexp"
 	"slices"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,34 +17,24 @@ var (
 
 type (
 	UserID = uuid.UUID
-	Email  string
 )
 
 var NilID = UserID{}
 
-func (e Email) IsValid() bool {
-	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	r := regexp.MustCompile(emailRegex)
-	return r.Match([]byte(e))
-}
-
-func (e Email) String() string {
-	return string(e)
-}
-
 type User struct {
 	ID        UserID
-	Email     Email
+	Email     common.Email
 	password  []byte
+	isHashed  bool
 	FirstName string
 	LastName  string
 }
 
-func New(id UserID, email, pass, firstName, lastName string) *User {
+func NewUser(id UserID, email, pass, firstName, lastName string) *User {
 	return &User{
 		ID:        id,
-		Email:     Email(email),
-		password:  []byte(email),
+		Email:     common.Email(email),
+		password:  []byte(pass),
 		FirstName: firstName,
 		LastName:  lastName,
 	}
@@ -54,8 +44,28 @@ func (u *User) Password() []byte {
 	return slices.Clone(u.password)
 }
 
-func (u *User) SetPassword(pass []byte) error {
-	p, err := bcrypt.GenerateFromPassword(pass, 12)
+func (u *User) SetPassword(pass []byte) {
+	u.password = slices.Clone(pass)
+}
+
+func (u *User) ValidatePassword() error {
+	if len(u.password) < 8 {
+		return ErrUserShortPassword
+	}
+	if len(u.password) > 72 {
+		return ErrUserLongPassword
+	}
+	return nil
+}
+
+func (u *User) HashPassword() error {
+	if u.isHashed {
+		return nil
+	}
+	if err := u.ValidatePassword(); err != nil {
+		return err
+	}
+	p, err := bcrypt.GenerateFromPassword(u.password, 12)
 	if err != nil {
 		return err
 	}
@@ -63,26 +73,23 @@ func (u *User) SetPassword(pass []byte) error {
 	return nil
 }
 
-func (u *User) ComparePassword(pass []byte) {
-	bcrypt.CompareHashAndPassword(u.password, pass)
+func (u *User) ComparePassword(pass []byte) error {
+	return bcrypt.CompareHashAndPassword(u.password, pass)
 }
 
 func (u *User) Validate() error {
-	switch {
-	case !u.Email.IsValid():
+	if !u.Email.IsValid() {
 		return ErrInvalidEmail
-	case len(u.password) < 8:
-		return ErrUserShortPassword
-	case len(u.password) > 72:
-		return ErrUserLongPassword
-	default:
-		return nil
 	}
+	if err := u.ValidatePassword(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type UserFilter struct {
 	ID    UserID
-	Email Email
+	Email common.Email
 }
 
 func (f *UserFilter) IsValid() bool {
