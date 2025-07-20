@@ -4,6 +4,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS bills;
 DROP TABLE IF EXISTS users_apartments;
+DROP TABLE IF EXISTS apartment_invites;
 DROP TABLE IF EXISTS apartments;
 DROP TABLE IF EXISTS users;
 -- Drop ENUM type if it exists
@@ -44,17 +45,26 @@ END IF;
 END $$;
 -- Create junction table for many-to-many relationship between users and apartments
 CREATE TABLE IF NOT EXISTS users_apartments (
-    user_id UUID, -- Nullable now
-    email TEXT NOT NULL, -- Used to invite non-registered users
+    user_id UUID NOT NULL,
     apartment_id UUID NOT NULL,
     PRIMARY KEY (user_id, apartment_id),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     deleted_at TIMESTAMPTZ,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+-- Create Invite table
+CREATE TABLE IF NOT EXISTS apartment_invites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    deleted_at TIMESTAMPTZ,
+    invite_email Text NOT NULL,
     invite_status invite_status_type NOT NULL DEFAULT 'pending',
     invite_token TEXT UNIQUE NOT NULL,
     invite_expires_at TIMESTAMPTZ NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    apartment_id UUID NOT NULL,
     FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 -- Create enum type for bills type
