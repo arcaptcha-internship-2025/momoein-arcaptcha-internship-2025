@@ -16,7 +16,7 @@ type Service interface {
 	) (
 		*domain.Invite, error,
 	)
-	// AcceptInvite(ctx context.Context, token string) (*domain.Apartment, error)
+	AcceptInvite(ctx context.Context, token string) (*domain.Apartment, error)
 	Members(ctx context.Context, id common.ID) ([]domain.ApartmentMember, error)
 }
 

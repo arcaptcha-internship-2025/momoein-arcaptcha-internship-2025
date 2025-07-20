@@ -39,6 +39,7 @@ func RegisterAPI(r *router.Router, app app.App) {
 		svcGetter := ApartmentServiceGetter(app)
 		r.Post("/", AddApartment(svcGetter))
 		r.Post("/invite", InviteApartmentMember(svcGetter))
+		r.Get("/invite/accept", AcceptApartmentInvite(svcGetter))
 	})
 }
 

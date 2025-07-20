@@ -23,6 +23,7 @@ var (
 	ErrOnInviteMember    = errors.New("error on invite member")
 	ErrUnregisteredUser  = errors.New("unregistered user")
 	ErrNotFound          = errors.New("resource not found")
+	ErrInvalidToken      = errors.New("invalid token")
 )
 
 type service struct {
@@ -121,6 +122,10 @@ func (s *service) validateApartmentAdmin(ctx context.Context, ApartmentID, admin
 		return ErrInvalidAdmin
 	}
 	return nil
+}
+
+func (s *service) AcceptInvite(ctx context.Context, token string) (*domain.Apartment, error) {
+	panic("unimplemented")
 }
 
 func (s *service) Members(ctx context.Context, id common.ID) ([]domain.ApartmentMember, error) {
