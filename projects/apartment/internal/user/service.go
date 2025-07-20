@@ -30,6 +30,9 @@ func (s *service) Create(ctx context.Context, u *domain.User) (*domain.User, err
 	if err := u.Validate(); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrUserOnValidate, err)
 	}
+	if err := u.HashPassword(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrUserOnCreate, err)
+	}
 	user, err := s.repo.Create(ctx, u)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrUserOnCreate, err)

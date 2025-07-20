@@ -14,7 +14,7 @@ type Service interface {
 		adminID, apartmentID common.ID,
 		userEmail common.Email,
 	) (
-		*domain.ApartmentMember, error,
+		*domain.Invite, error,
 	)
 	// AcceptInvite(ctx context.Context, token string) (*domain.Apartment, error)
 	Members(ctx context.Context, id common.ID) ([]domain.ApartmentMember, error)
@@ -23,12 +23,15 @@ type Service interface {
 type Repo interface {
 	Create(ctx context.Context, a *domain.Apartment) (*domain.Apartment, error)
 	Get(ctx context.Context, f *domain.ApartmentFilter) (*domain.Apartment, error)
-	AddMember(
+	InviteMember(
 		ctx context.Context,
 		apartmentID common.ID,
-		memberEmail common.Email,
 		invite *domain.Invite,
 	) (
-		*domain.ApartmentMember, error,
+		*domain.Invite, error,
 	)
+}
+
+type Email interface {
+	Send(to []string, msg []byte) error
 }

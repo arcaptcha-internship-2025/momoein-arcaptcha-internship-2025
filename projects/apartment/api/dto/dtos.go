@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
+
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -49,7 +51,10 @@ type RemoveApartmentRequest struct {
 type RemoveApartmentResponse struct {
 }
 
-type InviteUserToApartmentRequest struct{}
+type InviteUserToApartmentRequest struct {
+	UserEmail   common.Email `json:"userEmail"`
+	ApartmentID common.ID    `json:"apartmentID"`
+}
 type InviteUserToApartmentResponse struct {
 }
 

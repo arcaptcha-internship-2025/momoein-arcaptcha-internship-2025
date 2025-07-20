@@ -13,6 +13,7 @@ import (
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/postgres"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/smtp"
 )
 
 type app struct {
@@ -21,6 +22,7 @@ type app struct {
 	db               *sql.DB
 	userService      userPort.Service
 	apartmentService apartmentPort.Service
+	apartmentMail    apartmentPort.Email
 }
 
 func MustNew(ctx context.Context, cfg config.Config) App {
@@ -73,7 +75,18 @@ func (a *app) UserService(ctx context.Context) userPort.Service {
 
 func (a *app) ApartmentService(ctx context.Context) apartmentPort.Service {
 	if a.apartmentService == nil {
-		a.apartmentService = apartment.NewService(storage.NewApartmentRepo(a.db))
+		a.apartmentService = apartment.NewService(
+			storage.NewApartmentRepo(a.db),
+			a.mailService(),
+		)
 	}
 	return a.apartmentService
+}
+
+func (a *app) mailService() apartmentPort.Email {
+	c := a.Config().SMTP
+	if a.apartmentMail == nil {
+		a.apartmentMail = smtp.NewSMTPService(c.Host, c.Port, c.From, c.Username, c.Password)
+	}
+	return a.apartmentMail
 }

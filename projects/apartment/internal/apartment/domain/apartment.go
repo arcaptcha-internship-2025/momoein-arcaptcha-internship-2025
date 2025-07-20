@@ -34,6 +34,8 @@ func (s InviteStatus) IsValid() (ok bool) {
 }
 
 type Invite struct {
+	ID        common.ID
+	Email     common.Email
 	Status    InviteStatus
 	Token     string
 	ExpiresAt time.Time
@@ -41,7 +43,7 @@ type Invite struct {
 
 type ApartmentMember struct {
 	domain.User
-	Invite Invite
+	// Invite Invite
 	Debt   int64
 }
 
@@ -62,8 +64,6 @@ func (a *Apartment) Validate() error {
 type ApartmentFilter struct {
 	ID common.ID
 }
-
-
 
 type BillType string
 
