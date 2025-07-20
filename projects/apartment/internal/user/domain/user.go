@@ -25,6 +25,7 @@ type User struct {
 	ID        UserID
 	Email     common.Email
 	password  []byte
+	isHashed  bool
 	FirstName string
 	LastName  string
 }
@@ -43,8 +44,28 @@ func (u *User) Password() []byte {
 	return slices.Clone(u.password)
 }
 
-func (u *User) SetPassword(pass []byte) error {
-	p, err := bcrypt.GenerateFromPassword(pass, 12)
+func (u *User) SetPassword(pass []byte) {
+	u.password = slices.Clone(pass)
+}
+
+func (u *User) ValidatePassword() error {
+	if len(u.password) < 8 {
+		return ErrUserShortPassword
+	}
+	if len(u.password) > 72 {
+		return ErrUserLongPassword
+	}
+	return nil
+}
+
+func (u *User) HashPassword() error {
+	if u.isHashed {
+		return nil
+	}
+	if err := u.ValidatePassword(); err != nil {
+		return err
+	}
+	p, err := bcrypt.GenerateFromPassword(u.password, 12)
 	if err != nil {
 		return err
 	}
@@ -57,16 +78,13 @@ func (u *User) ComparePassword(pass []byte) error {
 }
 
 func (u *User) Validate() error {
-	switch {
-	case !u.Email.IsValid():
+	if !u.Email.IsValid() {
 		return ErrInvalidEmail
-	case len(u.password) < 8:
-		return ErrUserShortPassword
-	case len(u.password) > 72:
-		return ErrUserLongPassword
-	default:
-		return nil
 	}
+	if err := u.ValidatePassword(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type UserFilter struct {
