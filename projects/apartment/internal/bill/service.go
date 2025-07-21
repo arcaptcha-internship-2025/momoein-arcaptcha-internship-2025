@@ -15,6 +15,7 @@ import (
 var (
 	ErrOnAddBill = errors.New("error on add bill")
 	ErrOnGetBill = errors.New("error on get bill")
+	ErrNotFound  = errors.New("source not found")
 )
 
 type service struct {
