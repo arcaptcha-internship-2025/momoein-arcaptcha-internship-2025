@@ -101,7 +101,7 @@ func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.
 		token := r.URL.Query().Get(InviteTokenKey)
 
 		svc := svcGetter(r.Context())
-		apt, err := svc.AcceptInvite(r.Context(), token)
+		err := svc.AcceptInvite(r.Context(), token)
 		if err != nil {
 			switch {
 			case errors.Is(err, apartment.ErrInvalidToken):
@@ -116,10 +116,7 @@ func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.
 			return
 		}
 
-		if err = WriteJson(w, http.StatusAccepted, apt); err != nil {
-			log.Error("failed to write response", zap.Error(err))
-			InternalServerError(w, r)
-		}
+		w.WriteHeader(http.StatusAccepted)
 	})
 }
 
