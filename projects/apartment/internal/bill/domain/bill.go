@@ -40,8 +40,16 @@ type Bill struct {
 	Status      PaymentStatus
 	PaidAt      time.Time
 	Image       image.Image
+	HasImage    bool
 	ImageID     common.ID
 	ApartmentID common.ID
+}
+
+type BillFilter struct {
+	ID          common.ID
+	ApartmentID common.ID
+	Type        BillType
+	BillNumber  int64
 }
 
 func (b Bill) IsPaid() bool {
