@@ -21,6 +21,19 @@ services:
     ports:
       - $HTTP_PORT:$HTTP_PORT
 
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web UI
+    env_file:
+      - .env
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
 volumes:
   postgres_data:
     driver: local
+  minio-data:

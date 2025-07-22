@@ -6,6 +6,7 @@ type Config struct {
 	HTTP    HTTPConfig  `json:"http"`
 	Auth    AuthConfig  `json:"auth"`
 	SMTP    SMTPConfig  `json:"smtp"`
+	Minio   MinioConfig `json:"minio"`
 }
 
 type AppModeType string
@@ -41,4 +42,10 @@ type SMTPConfig struct {
 	From     string `json:"from"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type MinioConfig struct {
+	Endpoint  string `json:"endpoint"`
+	AccessKey string `json:"accessKey"`
+	SecretKey string `json:"secretKey"`
 }
