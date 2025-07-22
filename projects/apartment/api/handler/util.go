@@ -49,3 +49,8 @@ func Error(w http.ResponseWriter, r *http.Request, code int, msg ...string) {
 func InternalServerError(w http.ResponseWriter, r *http.Request) {
 	Error(w, r, http.StatusInternalServerError, "Internal Server Error")
 }
+
+func BadRequestError(w http.ResponseWriter, r *http.Request, msg ...string) {
+	m := append([]string{"Bad Request"}, msg...)
+	Error(w, r, http.StatusBadRequest, m...)
+}

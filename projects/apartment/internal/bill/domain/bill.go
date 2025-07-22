@@ -1,10 +1,17 @@
 package domain
 
 import (
-	"image"
+	"errors"
 	"time"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
+)
+
+var (
+	ErrBillMissingType       = errors.New("bill type is required")
+	ErrBillInvalidBillNumber = errors.New("bill number must be greater than zero")
+	ErrBillNegativeAmount    = errors.New("amount cannot be negative")
+	ErrBillMissingDueDate    = errors.New("due date is required")
 )
 
 type BillType string
@@ -30,6 +37,13 @@ func (bt BillType) IsValid() bool {
 	return ok
 }
 
+type Image struct {
+	Name    string
+	Type    string
+	Size    int64
+	Content []byte
+}
+
 type Bill struct {
 	ID          common.ID
 	Name        string
@@ -39,10 +53,26 @@ type Bill struct {
 	Amount      int64
 	Status      PaymentStatus
 	PaidAt      time.Time
-	Image       image.Image
+	Image       Image
 	HasImage    bool
 	ImageID     common.ID
 	ApartmentID common.ID
+}
+
+func (b *Bill) Validate() error {
+	if b.Type == "" {
+		return ErrBillMissingType
+	}
+	if b.BillNumber <= 0 {
+		return ErrBillInvalidBillNumber
+	}
+	if b.Amount < 0 {
+		return ErrBillNegativeAmount
+	}
+	if b.DueDate.IsZero() {
+		return ErrBillMissingDueDate
+	}
+	return nil
 }
 
 type BillFilter struct {

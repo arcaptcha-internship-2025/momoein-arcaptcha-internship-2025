@@ -3,19 +3,20 @@ package bill
 import (
 	"context"
 	"errors"
-	"image"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/fp"
+	"go.uber.org/zap"
 )
 
 var (
-	ErrOnAddBill = errors.New("error on add bill")
-	ErrOnGetBill = errors.New("error on get bill")
-	ErrNotFound  = errors.New("source not found")
+	ErrOnAddBill      = errors.New("error on add bill")
+	ErrOnGetBill      = errors.New("error on get bill")
+	ErrNotFound       = errors.New("source not found")
+	ErrBillOnValidate = errors.New("invalid bill")
 )
 
 type service struct {
@@ -28,6 +29,13 @@ func NewService(r port.Repo, s port.Storage) port.Service {
 }
 
 func (s *service) AddBill(ctx context.Context, bill *domain.Bill) (*domain.Bill, error) {
+	log := appctx.Logger(ctx)
+
+	if err := bill.Validate(); err != nil {
+		log.Error("service AddBill", zap.Error(err))
+		return nil, fp.WrapErrors(ErrOnAddBill, ErrBillOnValidate, err)
+	}
+
 	if bill.HasImage {
 		bill.ImageID = common.NewRandomID()
 		err := s.strg.Set(bill.ImageID.String(), bill.Image)
@@ -47,7 +55,7 @@ func (s *service) GetBill(ctx context.Context, f *domain.BillFilter) (*domain.Bi
 	}
 
 	if bill.HasImage {
-		img, ok := s.strg.Get(bill.ImageID.String()).(image.Image)
+		img, ok := s.strg.Get(bill.ImageID.String()).(domain.Image)
 		if !ok {
 			log.Warn("bad image format")
 		} else {

@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
+import (
+	"time"
+
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
+)
 
 type Error struct {
 	Code    int    `json:"code"`
@@ -66,8 +70,24 @@ type ListApartmentUsersRequest struct{}
 type ListApartmentUsersResponse struct {
 }
 
-type AddBillRequest struct{}
+type AddBillRequest struct {
+	Name          string    `form:"name"`
+	BillType      string    `form:"billType"`
+	BillNumber    int64     `form:"billNumber"`
+	DueDate       time.Time `form:"dueDate"`
+	Amount        int64     `form:"amount"`
+	PaymentStatus string    `form:"paymentStatus"`
+	PaidAt        time.Time `form:"paidAt"`
+}
 type AddBillResponse struct {
+}
+
+type GetBillRequest struct {
+	ID common.ID `json:"id" form:"id"`
+}
+
+type GetBillImageRequest struct{
+	ImageID common.ID `json:"imageID"`
 }
 
 type RemoveBillRequest struct{}
