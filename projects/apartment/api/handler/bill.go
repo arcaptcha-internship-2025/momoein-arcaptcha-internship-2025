@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -25,13 +26,14 @@ const (
 )
 
 const maxFileSize = 1 * MiB
+const dateLayout = "2006-01-02"
 
 func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
 		if err := r.ParseMultipartForm(1 * MiB); err != nil {
-			log.Error("add bill", zap.Error(err))
+			log.Error("failed to parse multipart form", zap.Error(err))
 			Error(w, r, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -40,120 +42,60 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 
 		var b domain.Bill
 
-		// --- Name ---
+		// Parse and validate form fields
 		b.Name = r.FormValue("name")
 
-		// --- Bill Type ---
-		billTypeStr := r.FormValue("type")
-		billType := domain.BillType(billTypeStr)
-		if !billType.IsValid() {
-			log.Error("AddBill", zap.String("error", "invalid bill type"))
+		if bt := domain.BillType(r.FormValue("type")); bt.IsValid() {
+			b.Type = bt
+		} else {
 			Error(w, r, http.StatusBadRequest, "invalid bill type")
 			return
 		}
-		b.Type = billType
 
-		// --- Bill Number ---
-		billNumber := r.FormValue("billNumber")
-		billNum, err := strconv.ParseInt(billNumber, 10, 64)
-		if err != nil {
-			log.Error("AddBill", zap.Error(err))
-			Error(w, r, http.StatusBadRequest, "invalid bill number")
+		if b.BillNumber, _ = parseIntField(r, "billNumber", log, w); b.BillNumber <= 0 {
 			return
 		}
-		b.BillNumber = billNum
 
-		// --- Due Date ---
-		dueDateStr := r.FormValue("dueDate")
-		dueDate, err := time.Parse("2006-01-02", dueDateStr)
-		if err != nil {
-			log.Error("AddBill", zap.String("dueDate", dueDateStr), zap.Error(err))
-			Error(w, r, http.StatusBadRequest, "invalid due date format (expected YYYY-MM-DD)")
+		if b.Amount, _ = parseIntField(r, "amount", log, w); b.Amount < 0 {
 			return
 		}
-		b.DueDate = dueDate
 
-		// --- Amount ---
-		amountStr := r.FormValue("amount")
-		amount, err := strconv.ParseInt(amountStr, 10, 64)
-		if err != nil {
-			log.Error("AddBill", zap.String("amount", amountStr), zap.Error(err))
-			Error(w, r, http.StatusBadRequest, "invalid amount")
+		if b.DueDate, _ = parseDateField(r, "dueDate", dateLayout, log, w); b.DueDate.IsZero() {
 			return
 		}
-		b.Amount = amount
 
-		// --- Status ---
-		statusStr := r.FormValue("status")
-		status := domain.PaymentStatus(statusStr)
-		if !status.IsValid() {
-			log.Error("AddBill", zap.String("status", statusStr))
+		if status := domain.PaymentStatus(r.FormValue("status")); status.IsValid() {
+			b.Status = status
+		} else {
 			Error(w, r, http.StatusBadRequest, "invalid payment status")
 			return
 		}
-		b.Status = status
 
-		// --- Paid At (optional) ---
-		paidAtStr := r.FormValue("paidAt")
-		if paidAtStr != "" {
-			paidAt, err := time.Parse("2006-01-02", paidAtStr)
-			if err != nil {
-				log.Error("AddBill", zap.String("paidAt", paidAtStr), zap.Error(err))
-				Error(w, r, http.StatusBadRequest, "invalid paidAt date format (expected YYYY-MM-DD)")
+		if paidAtStr := r.FormValue("paidAt"); paidAtStr != "" {
+			if b.PaidAt, _ = parseDateField(r, "paidAt", dateLayout, log, w); b.PaidAt.IsZero() {
 				return
 			}
-			b.PaidAt = paidAt
 		}
 
-		// --- Apartment ID ---
 		apartmentID := r.FormValue("apartmentID")
 		if apartmentID == "" {
 			Error(w, r, http.StatusBadRequest, "apartmentID is required")
 			return
 		}
-		aptID := common.NilID
+		var aptID common.ID
 		if err := aptID.UnmarshalText([]byte(apartmentID)); err != nil {
-			log.Error("AddBil", zap.Error(err))
+			log.Error("invalid apartment id", zap.Error(err))
 			Error(w, r, http.StatusBadRequest, "invalid apartment id")
 			return
 		}
 		b.ApartmentID = aptID
 
-		// --- Optional Image ---
-		file, header, err := r.FormFile("image")
-		if err != nil && !errors.Is(err, http.ErrMissingFile) {
-			log.Error("failed to get image", zap.Error(err))
-			InternalServerError(w, r)
+		// Handle optional image
+		if err := handleImageUpload(r, &b, log, w); err != nil {
 			return
 		}
 
-		if file != nil {
-			defer file.Close()
-
-			if header.Size > maxFileSize {
-				log.Error("uploaded file too large", zap.Int64("size", header.Size))
-				Error(w, r, http.StatusRequestEntityTooLarge, "uploaded file is too large")
-				return
-			}
-
-			content, err := io.ReadAll(file)
-			if err != nil {
-				log.Error("failed to read file", zap.Error(err))
-				InternalServerError(w, r)
-				return
-			}
-
-			contentType := http.DetectContentType(content)
-			if strings.HasPrefix(contentType, "image/") {
-				b.HasImage = true
-				b.Image.Name = header.Filename
-				b.Image.Type = contentType
-				b.Image.Size = header.Size
-				b.Image.Content = content
-			}
-		}
-
-		// --- Service Call ---
+		// Service Call
 		svc := svcGetter(r.Context())
 		newBill, err := svc.AddBill(r.Context(), &b)
 		if err != nil {
@@ -166,12 +108,74 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 			return
 		}
 
-		// --- Success Response ---
 		WriteJson(w, http.StatusCreated, map[string]any{
 			"message": "bill created successfully",
 			"id":      newBill.ID,
 		})
 	})
+}
+
+func parseIntField(r *http.Request, field string, log *zap.Logger, w http.ResponseWriter) (int64, bool) {
+	valStr := r.FormValue(field)
+	val, err := strconv.ParseInt(valStr, 10, 64)
+	if err != nil {
+		log.Error("invalid int field", zap.String("field", field), zap.String("value", valStr), zap.Error(err))
+		Error(w, r, http.StatusBadRequest, fmt.Sprintf("invalid %s", field))
+		return 0, false
+	}
+	return val, true
+}
+
+func parseDateField(r *http.Request, field, layout string, log *zap.Logger, w http.ResponseWriter) (time.Time, bool) {
+	valStr := r.FormValue(field)
+	val, err := time.Parse(layout, valStr)
+	if err != nil {
+		log.Error("invalid date field", zap.String("field", field), zap.String("value", valStr), zap.Error(err))
+		Error(w, r, http.StatusBadRequest, fmt.Sprintf("invalid %s format (expected YYYY-MM-DD)", field))
+		return time.Time{}, false
+	}
+	return val, true
+}
+
+func handleImageUpload(r *http.Request, b *domain.Bill, log *zap.Logger, w http.ResponseWriter) error {
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		if !errors.Is(err, http.ErrMissingFile) {
+			log.Error("failed to get image", zap.Error(err))
+			InternalServerError(w, r)
+			return err
+		}
+		return nil // image is optional
+	}
+	defer file.Close()
+
+	if header.Size > maxFileSize {
+		log.Error("uploaded file too large", zap.Int64("size", header.Size))
+		Error(w, r, http.StatusRequestEntityTooLarge, "uploaded file is too large")
+		return errors.New("file too large")
+	}
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		log.Error("failed to read file", zap.Error(err))
+		InternalServerError(w, r)
+		return err
+	}
+
+	contentType := http.DetectContentType(content)
+	if !strings.HasPrefix(contentType, "image/") {
+		Error(w, r, http.StatusBadRequest, "uploaded file is not an image")
+		return errors.New("invalid image type")
+	}
+
+	b.HasImage = true
+	b.Image = domain.Image{
+		Name:    header.Filename,
+		Type:    contentType,
+		Size:    header.Size,
+		Content: content,
+	}
+	return nil
 }
 
 func GetBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
