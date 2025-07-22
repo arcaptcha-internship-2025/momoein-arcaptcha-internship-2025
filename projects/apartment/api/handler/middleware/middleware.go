@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -94,9 +93,9 @@ func NewAuth(secret []byte) router.Middleware {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), appjwt.UserIDKey, claims.UserID)
-			ctx = context.WithValue(ctx, appjwt.UserEmailKey, claims.UserEMail)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			appctx.SetValue(r.Context(), appjwt.UserIDKey, claims.UserID)
+			appctx.SetValue(r.Context(), appjwt.UserEmailKey, claims.UserEMail)
+			next.ServeHTTP(w, r)
 		})
 	}
 }
