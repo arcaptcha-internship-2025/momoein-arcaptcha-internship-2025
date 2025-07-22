@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS bills (
     name TEXT,
     bill_type bill_type NOT NULL,
     bill_id INTEGER UNIQUE NOT NULL,
-    amount INTEGER,
+    amount INTEGER NOT NULL,
     status bill_status_type NOT NULL DEFAULT 'unpaid',
     paid_at TIMESTAMPTZ,
     due_date DATE NOT NULL,
