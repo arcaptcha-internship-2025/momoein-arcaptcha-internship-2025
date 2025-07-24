@@ -7,6 +7,8 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
 	apartmentPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill"
+	billPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage"
@@ -23,6 +25,7 @@ type app struct {
 	userService      userPort.Service
 	apartmentService apartmentPort.Service
 	apartmentMail    apartmentPort.Email
+	billService      billPort.Service
 }
 
 func MustNew(ctx context.Context, cfg config.Config) App {
@@ -89,4 +92,11 @@ func (a *app) mailService() apartmentPort.Email {
 		a.apartmentMail = smtp.NewSMTPService(c.Host, c.Port, c.From, c.Username, c.Password)
 	}
 	return a.apartmentMail
+}
+
+func (a *app) BillService() billPort.Service {
+	if a.billService == nil {
+		a.billService = bill.NewService(storage.NewBillRepo(a.db), nil) // TODO storage
+	}
+	return a.billService
 }
