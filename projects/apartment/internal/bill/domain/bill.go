@@ -12,6 +12,7 @@ var (
 	ErrBillInvalidBillNumber = errors.New("bill number must be greater than zero")
 	ErrBillNegativeAmount    = errors.New("amount cannot be negative")
 	ErrBillMissingDueDate    = errors.New("due date is required")
+	ErrMissingApartmentID    = errors.New("apartment id is required")
 )
 
 type BillType string
@@ -53,7 +54,7 @@ type Bill struct {
 	Amount      int64
 	Status      PaymentStatus
 	PaidAt      time.Time
-	Image       Image
+	Image       *Image
 	HasImage    bool
 	ImageID     common.ID
 	ApartmentID common.ID
@@ -72,7 +73,67 @@ func (b *Bill) Validate() error {
 	if b.DueDate.IsZero() {
 		return ErrBillMissingDueDate
 	}
+	if b.ApartmentID == common.NilID {
+		return ErrMissingApartmentID
+	}
 	return nil
+}
+
+func (b *Bill) SetName(s string) *Bill {
+	b.Name = s
+	return b
+}
+
+func (b *Bill) SetType(t BillType) *Bill {
+	b.Type = t
+	return b
+}
+
+func (b *Bill) SetBillNumber(n int64) *Bill {
+	b.BillNumber = n
+	return b
+}
+
+func (b *Bill) SetDueDate(t time.Time) *Bill {
+	b.DueDate = t
+	return b
+}
+
+func (b *Bill) SetAmount(i int64) *Bill {
+	b.Amount = i
+	return b
+}
+
+func (b *Bill) SetStatus(s PaymentStatus) *Bill {
+	b.Status = s
+	return b
+}
+
+func (b *Bill) SetPaidAt(t time.Time) *Bill {
+	b.PaidAt = t
+	return b
+}
+
+// SetImage sets the given *Image and sets the HasImage flag to true if img is not nil.
+func (b *Bill) SetImage(i *Image) *Bill {
+	b.Image = i
+	b.HasImage = i != nil
+	return b
+}
+
+func (b *Bill) SetHasImage(hi bool) *Bill {
+	b.HasImage = hi
+	return b
+}
+
+func (b *Bill) SetImageID(id common.ID) *Bill {
+	b.ImageID = id
+	return b
+}
+
+func (b *Bill) SetApartmentID(id common.ID) *Bill {
+	b.ApartmentID = id
+	return b
 }
 
 type BillFilter struct {
