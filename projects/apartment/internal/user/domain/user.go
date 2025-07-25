@@ -44,7 +44,14 @@ func (u *User) Password() []byte {
 	return slices.Clone(u.password)
 }
 
+func (u *User) IsHashed() bool { return u.isHashed }
+
 func (u *User) SetPassword(pass []byte) {
+	if _, err := bcrypt.Cost(pass); err != nil {
+		u.isHashed = false
+	} else {
+		u.isHashed = true
+	}
 	u.password = slices.Clone(pass)
 }
 
@@ -70,6 +77,7 @@ func (u *User) HashPassword() error {
 		return err
 	}
 	u.password = p
+	u.isHashed = true
 	return nil
 }
 
