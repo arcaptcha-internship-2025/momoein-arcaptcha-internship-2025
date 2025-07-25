@@ -169,7 +169,7 @@ func handleImageUpload(r *http.Request, b *domain.Bill, log *zap.Logger, w http.
 	}
 
 	b.HasImage = true
-	b.Image = domain.Image{
+	b.Image = &domain.Image{
 		Name:    header.Filename,
 		Type:    contentType,
 		Size:    header.Size,
