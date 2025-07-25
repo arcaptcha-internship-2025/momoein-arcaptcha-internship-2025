@@ -59,7 +59,7 @@ func (s *service) GetBill(ctx context.Context, f *domain.BillFilter) (*domain.Bi
 		if !ok {
 			log.Warn("bad image format")
 		} else {
-			bill.Image = img
+			bill.Image = &img
 		}
 	}
 
