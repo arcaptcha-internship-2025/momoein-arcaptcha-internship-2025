@@ -11,6 +11,7 @@ import (
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,4 +57,27 @@ func TestUserRepo_Create(t *testing.T) {
 
 	// Step 9: Ensure all expectations were met
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUserRepo_Create_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	repo := NewUserRepo(db)
+	ctx := context.Background()
+
+	user := &userDomain.User{}
+	storageUser := types.UserDomainToStorage(user)
+	userID := common.NewRandomID()
+
+	mock.ExpectQuery("INSERT INTO users").
+		WithArgs(storageUser.Email, storageUser.Password).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID.String()))
+
+	result, err := repo.Create(ctx, user)
+
+	assert.NoError(t, err)
+	assert.Equal(t, userID.String(), result.ID.String())
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
