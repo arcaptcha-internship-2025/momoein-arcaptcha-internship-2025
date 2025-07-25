@@ -58,6 +58,7 @@ func (s *service) GetBill(ctx context.Context, f *domain.BillFilter) (*domain.Bi
 		img, ok := s.strg.Get(bill.ImageID.String()).(domain.Image)
 		if !ok {
 			log.Warn("bad image format")
+			bill.HasImage = false
 		} else {
 			bill.Image = &img
 		}
