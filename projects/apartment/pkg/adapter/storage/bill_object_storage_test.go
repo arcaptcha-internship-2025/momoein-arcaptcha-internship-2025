@@ -17,7 +17,7 @@ var (
 
 func TestBillObjectStorage_FPut(t *testing.T) {
 	client := minio.MustNewClient("localhost:9000", "minioadmin", "minioadmin")
-	obj := NewBillObjectStorage(client)
+	obj := MustNewBillObjectStorage(client)
 
 	err := obj.FPut(ctx, "test-2", "../../../test/data/my-testfile")
 	assert.Nil(t, err)
@@ -26,7 +26,7 @@ func TestBillObjectStorage_FPut(t *testing.T) {
 func TestBillObjectStorage_FGet(t *testing.T) {
 	client := minio.MustNewClient("localhost:9000", "minioadmin", "minioadmin")
 
-	obj := NewBillObjectStorage(client)
+	obj := MustNewBillObjectStorage(client)
 
 	err := obj.FGet(ctx, "test-1", "../../../test/data/my-testfile1")
 	assert.Nil(t, err)
