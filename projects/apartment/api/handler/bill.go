@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -64,12 +66,7 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 			return
 		}
 
-		if status := domain.PaymentStatus(r.FormValue("status")); status.IsValid() {
-			b.Status = status
-		} else {
-			Error(w, r, http.StatusBadRequest, "invalid payment status")
-			return
-		}
+		b.Status = domain.PaymentStatus(r.FormValue("status"))
 
 		if paidAtStr := r.FormValue("paidAt"); paidAtStr != "" {
 			if b.PaidAt, _ = parseDateField(r, "paidAt", dateLayout, log, w); b.PaidAt.IsZero() {
@@ -168,9 +165,23 @@ func handleImageUpload(r *http.Request, b *domain.Bill, log *zap.Logger, w http.
 		return errors.New("invalid image type")
 	}
 
+	dir, err := os.MkdirTemp(os.TempDir(), "*")
+	if err != nil {
+		log.Error("failed to make temp dir", zap.Error(err))
+		return err
+	}
+
+	path := filepath.Join(dir, header.Filename)
+	err = os.WriteFile(path, content, 0644)
+	if err != nil {
+		log.Error("failed to save image", zap.Error(err))
+		return err
+	}
+
 	b.HasImage = true
 	b.Image = &domain.Image{
 		Name:    header.Filename,
+		Path:    path,
 		Type:    contentType,
 		Size:    header.Size,
 		Content: content,
@@ -219,6 +230,35 @@ func GetBillImage(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 			BadRequestError(w, r, "invalid image id")
 		}
 
-		log.Debug("GetBillImage", zap.String("imageId", req.ImageID.String()))
+		svc := svcGetter(r.Context())
+		path, err := svc.GetBillImage(r.Context(), req.ImageID)
+		if err != nil {
+			log.Error("GetBillImage", zap.Error(err))
+			InternalServerError(w, r)
+			return
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			log.Error("GetBillImage", zap.Error(err))
+			InternalServerError(w, r)
+			return
+		}
+		defer file.Close()
+
+		stat, err := os.Stat(path)
+		if err == nil {
+			log.Debug("", zap.Any("file stat", stat))
+		}
+
+		// Optionally detect content-type from file extension or contents
+		w.Header().Set("Content-Type", "image/png") // or image/jpeg, etc.
+		w.Header().Set("Content-Disposition", "inline; filename=\""+filepath.Base(path)+"\"")
+
+		// Serve file content
+		if _, err := io.Copy(w, file); err != nil {
+			log.Error("GetBillImage - writing response", zap.Error(err))
+		}
+
 	})
 }
