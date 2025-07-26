@@ -13,6 +13,8 @@ var (
 	ErrBillNegativeAmount    = errors.New("amount cannot be negative")
 	ErrBillMissingDueDate    = errors.New("due date is required")
 	ErrMissingApartmentID    = errors.New("apartment id is required")
+	ErrMissingPaymentStatus  = errors.New("payment status is required")
+	ErrInvalidPaymentStatus  = errors.New("invalid payment status")
 )
 
 type BillType string
@@ -40,6 +42,7 @@ func (bt BillType) IsValid() bool {
 
 type Image struct {
 	Name    string
+	Path    string
 	Type    string
 	Size    int64
 	Content []byte
@@ -75,6 +78,12 @@ func (b *Bill) Validate() error {
 	}
 	if b.ApartmentID == common.NilID {
 		return ErrMissingApartmentID
+	}
+	if len(b.Status) == 0 {
+		return ErrMissingPaymentStatus
+	}
+	if !b.Status.IsValid() {
+		return ErrInvalidPaymentStatus
 	}
 	return nil
 }
