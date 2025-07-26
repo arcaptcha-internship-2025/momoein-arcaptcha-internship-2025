@@ -104,7 +104,7 @@ func (a *app) BillService() billPort.Service {
 	if a.billService == nil {
 		a.billService = bill.NewService(
 			storage.NewBillRepo(a.db),
-			storage.NewBillObjectStorage(c),
+			storage.MustNewBillObjectStorage(c),
 		)
 	}
 	return a.billService
