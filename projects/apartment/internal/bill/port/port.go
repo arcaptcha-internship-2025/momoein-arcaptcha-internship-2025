@@ -19,8 +19,6 @@ type Repo interface {
 }
 
 type ObjectStorage interface {
-	Set(key string, val any) error
-	Get(key string) any
 	FPut(ctx context.Context, key, filename string) error
 	FGet(ctx context.Context, key, filename string) error
 	Del(ctx context.Context, key string) error
