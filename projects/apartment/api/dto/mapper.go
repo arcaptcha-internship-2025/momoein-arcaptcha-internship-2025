@@ -2,6 +2,7 @@ package dto
 
 import (
 	apartmentDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/domain"
+	billDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 )
@@ -24,7 +25,7 @@ func ApartmentDTOToDomain(a *Apartment) *apartmentDomain.Apartment {
 		UnitNumber: a.UnitNumber,
 		AdminID:    adminId,
 		Members:    []apartmentDomain.ApartmentMember{},
-		Bills:      []apartmentDomain.Bill{},
+		Bills:      []billDomain.Bill{},
 	}
 }
 

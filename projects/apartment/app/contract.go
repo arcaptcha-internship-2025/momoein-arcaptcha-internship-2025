@@ -6,6 +6,7 @@ import (
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
 	apartment "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
+	bill "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
 	user "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 )
@@ -16,4 +17,5 @@ type App interface {
 	DB() *sql.DB
 	UserService(ctx context.Context) user.Service
 	ApartmentService(ctx context.Context) apartment.Service
+	BillService() bill.Service
 }

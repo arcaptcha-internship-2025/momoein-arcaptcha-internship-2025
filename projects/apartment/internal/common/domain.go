@@ -10,6 +10,14 @@ type ID = uuid.UUID
 
 var NilID = ID{}
 
+func NewRandomID() ID {
+	return uuid.New()
+}
+
+func ValidateID(id string) error {
+	return uuid.Validate(id)
+}
+
 type Email string
 
 func (e Email) String() string {

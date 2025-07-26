@@ -23,6 +23,9 @@ var (
 	ErrOnInviteMember    = errors.New("error on invite member")
 	ErrUnregisteredUser  = errors.New("unregistered user")
 	ErrNotFound          = errors.New("resource not found")
+	ErrInvalidToken      = errors.New("invalid token")
+	ErrOnAcceptInvite    = errors.New("error on accept invite")
+	ErrExpiredToken      = errors.New("expired token")
 )
 
 type service struct {
@@ -119,6 +122,17 @@ func (s *service) validateApartmentAdmin(ctx context.Context, ApartmentID, admin
 	}
 	if apartment.AdminID != adminID {
 		return ErrInvalidAdmin
+	}
+	return nil
+}
+
+func (s *service) AcceptInvite(ctx context.Context, token string) error {
+	if err := common.ValidateID(token); err != nil {
+		return fp.WrapErrors(ErrOnAcceptInvite, ErrInvalidToken, err)
+	}
+	err := s.repo.AcceptInvite(ctx, token)
+	if err != nil {
+		return fp.WrapErrors(ErrOnAcceptInvite, err)
 	}
 	return nil
 }

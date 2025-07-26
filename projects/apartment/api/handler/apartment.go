@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
 	apartmentPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
@@ -81,6 +84,39 @@ func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service]) http.
 			log.Error("WriteJson response", zap.Error(err))
 			InternalServerError(w, r)
 		}
+	})
+}
+
+const InviteTokenKey string = "token"
+
+func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(r.Context())
+
+		if !r.URL.Query().Has(InviteTokenKey) {
+			log.Info("invite token not exists")
+			Error(w, r, http.StatusBadRequest, "token not exists")
+			return
+		}
+		token := r.URL.Query().Get(InviteTokenKey)
+
+		svc := svcGetter(r.Context())
+		err := svc.AcceptInvite(r.Context(), token)
+		if err != nil {
+			switch {
+			case errors.Is(err, apartment.ErrInvalidToken):
+				Error(w, r, http.StatusBadRequest)
+			case errors.Is(err, apartment.ErrUnregisteredUser): // ??
+				redirectURL := "/sign-up?return_to=" + url.QueryEscape(r.URL.String())
+				http.Redirect(w, r, redirectURL, http.StatusFound)
+			default:
+				log.Error("accept invite", zap.Error(err))
+				Error(w, r, http.StatusInternalServerError)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusAccepted)
 	})
 }
 

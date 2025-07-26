@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
@@ -108,4 +110,67 @@ func (r *apartmentRepo) InviteMember(
 		return nil, err
 	}
 	return invite, nil
+}
+
+func (r *apartmentRepo) AcceptInvite(ctx context.Context, token string) error {
+	query := `
+		SELECT invite_email, invite_status, invite_expires_at, apartment_id
+		FROM apartment_invites
+		WHERE invite_token = $1;
+	`
+	var (
+		email  string
+		status string
+		exp    sql.NullTime
+		aptId  string
+	)
+	err := r.db.QueryRowContext(ctx, query, token).Scan(&email, &status, &exp, &aptId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return apartment.ErrInvalidToken
+		}
+		return err
+	}
+	if !exp.Valid || time.Since(exp.Time) > 0 {
+		return apartment.ErrExpiredToken
+	}
+	if status == domain.InviteStatusAccepted.String() {
+		return nil
+	}
+
+	var userId string
+	err = r.db.QueryRowContext(ctx, `
+		SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL;
+	`, email).Scan(&userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return apartment.ErrUnregisteredUser
+		}
+		return err
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO users_apartments(user_id, apartment_id)
+		VALUES($1, $2);`, userId, aptId,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, `
+		UPDATE apartment_invites
+		SET invite_status = $1
+		WHERE invite_token = $2;`, domain.InviteStatusAccepted.String(), token,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

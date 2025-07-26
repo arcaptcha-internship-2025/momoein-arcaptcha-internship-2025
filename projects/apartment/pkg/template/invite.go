@@ -2,27 +2,28 @@ package template
 
 import (
 	"bytes"
-	"html/template"
+	_ "embed"
+	"text/template"
 )
+
+//go:embed invite_email.html
+var inviteEmailTemplate string
 
 type InviteData struct {
 	Name          string
 	EventName     string
-	EventDate     string
-	EventTime     string
-	EventLocation string
 	Message       string
 	RSVPLink      string
 	OrganizerName string
 }
 
 func NewInvite(data InviteData) ([]byte, error) {
-	t, err := template.New("invite").ParseFiles("pkg/template/invite_email.html")
+	tmpl, err := template.New("InviteEmail").Parse(inviteEmailTemplate)
 	if err != nil {
 		return nil, err
 	}
 	var tpl bytes.Buffer
-	if err := t.ExecuteTemplate(&tpl, "InviteEmail", data); err != nil {
+	if err := tmpl.Execute(&tpl, data); err != nil {
 		return nil, err
 	}
 	return tpl.Bytes(), nil

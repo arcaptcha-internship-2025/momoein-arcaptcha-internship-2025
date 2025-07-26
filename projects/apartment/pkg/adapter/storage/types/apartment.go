@@ -1,7 +1,8 @@
 package types
 
 import (
-	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/domain"
+	aptDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/domain"
+	bilDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 )
 
@@ -13,7 +14,7 @@ type Apartment struct {
 	AdminID    string
 }
 
-func ApartmentDomainToStorage(a *domain.Apartment) *Apartment {
+func ApartmentDomainToStorage(a *aptDomain.Apartment) *Apartment {
 	return &Apartment{
 		Model:      Model{ID: a.ID.String()},
 		Name:       a.Name,
@@ -23,18 +24,18 @@ func ApartmentDomainToStorage(a *domain.Apartment) *Apartment {
 	}
 }
 
-func ApartmentStorageToDomain(a *Apartment) *domain.Apartment {
+func ApartmentStorageToDomain(a *Apartment) *aptDomain.Apartment {
 	id := common.NilID
 	_ = id.UnmarshalText([]byte(a.ID))
 	adminId := common.NilID
 	_ = adminId.UnmarshalText([]byte(a.AdminID))
-	return &domain.Apartment{
+	return &aptDomain.Apartment{
 		ID:         id,
 		Name:       a.Name,
 		Address:    a.Address,
 		UnitNumber: a.UnitNumber,
 		AdminID:    adminId,
-		Members:    []domain.ApartmentMember{},
-		Bills:      []domain.Bill{},
+		Members:    []aptDomain.ApartmentMember{},
+		Bills:      []bilDomain.Bill{},
 	}
 }

@@ -39,13 +39,19 @@ func RegisterAPI(r *router.Router, app app.App) {
 		svcGetter := ApartmentServiceGetter(app)
 		r.Post("/", AddApartment(svcGetter))
 		r.Post("/invite", InviteApartmentMember(svcGetter))
+		r.Get("/invite/accept", AcceptApartmentInvite(svcGetter))
+
+		bilSvcGtr := BillServiceGetter(app)
+		r.Post("/bill", AddBill(bilSvcGtr))
+		r.Get("/bill", GetBill(bilSvcGtr))
+		r.Get("/bill/image", GetBillImage(bilSvcGtr))
 	})
 }
 
 func getRootHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path != "/" {
-			http.NotFound(w, req)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
 			return
 		}
 		w.Write([]byte("hello from arcaptcha apartment api\n"))
