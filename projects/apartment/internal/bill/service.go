@@ -3,6 +3,8 @@ package bill
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
@@ -17,14 +19,15 @@ var (
 	ErrOnGetBill      = errors.New("error on get bill")
 	ErrNotFound       = errors.New("source not found")
 	ErrBillOnValidate = errors.New("invalid bill")
+	ErrOnGetBillImage = errors.New("error on get bill image")
 )
 
 type service struct {
 	repo port.Repo
-	strg port.Storage
+	strg port.ObjectStorage
 }
 
-func NewService(r port.Repo, s port.Storage) port.Service {
+func NewService(r port.Repo, s port.ObjectStorage) port.Service {
 	return &service{repo: r, strg: s}
 }
 
@@ -36,9 +39,9 @@ func (s *service) AddBill(ctx context.Context, bill *domain.Bill) (*domain.Bill,
 		return nil, fp.WrapErrors(ErrOnAddBill, ErrBillOnValidate, err)
 	}
 
-	if bill.HasImage {
+	if bill.HasImage && bill.Image != nil {
 		bill.ImageID = common.NewRandomID()
-		err := s.strg.Set(bill.ImageID.String(), bill.Image)
+		err := s.strg.FPut(ctx, bill.ImageID.String(), bill.Image.Path)
 		if err != nil {
 			return nil, fp.WrapErrors(ErrOnAddBill, err)
 		}
@@ -55,14 +58,22 @@ func (s *service) GetBill(ctx context.Context, f *domain.BillFilter) (*domain.Bi
 	}
 
 	if bill.HasImage {
-		img, ok := s.strg.Get(bill.ImageID.String()).(domain.Image)
-		if !ok {
-			log.Warn("bad image format")
-			bill.HasImage = false
+		path, err := s.GetBillImage(ctx, bill.ImageID)
+		if err != nil {
+			log.Warn("failed to get bill image", zap.Error(err))
 		} else {
-			bill.Image = &img
+			bill.Image = &domain.Image{Path: path}
 		}
 	}
 
 	return bill, nil
+}
+
+func (s *service) GetBillImage(ctx context.Context, imageID common.ID) (string, error) {
+	path := filepath.Join(os.TempDir(), imageID.String())
+	err := s.strg.FGet(ctx, imageID.String(), path)
+	if err != nil {
+		return "", fp.WrapErrors(ErrOnGetBillImage, err)
+	}
+	return path, nil
 }
