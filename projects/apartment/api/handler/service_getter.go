@@ -25,6 +25,6 @@ func ApartmentServiceGetter(a app.App) ServiceGetter[apartmentPort.Service] {
 
 func BillServiceGetter(a app.App) ServiceGetter[billPort.Service] {
 	return func(ctx context.Context) billPort.Service {
-		return nil
+		return a.BillService()
 	}
 }
