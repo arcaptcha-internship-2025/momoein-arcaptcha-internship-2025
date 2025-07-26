@@ -19,7 +19,8 @@ var (
 	ctx = appctx.New(context.Background(), appctx.WithLogger(log))
 )
 
-// Mocks
+// ----------- Mocks -------------
+
 type MockRepo struct {
 	mock.Mock
 }
@@ -48,8 +49,18 @@ func (m *MockStorage) Get(key string) any {
 	return args.Get(0)
 }
 
-func (m *MockStorage) Del(key string) error {
-	args := m.Called(key)
+func (m *MockStorage) FPut(ctx context.Context, key, filename string) error {
+	args := m.Called(ctx, key, filename)
+	return args.Error(0)
+}
+
+func (m *MockStorage) FGet(ctx context.Context, key, filename string) error {
+	args := m.Called(ctx, key, filename)
+	return args.Error(0)
+}
+
+func (m *MockStorage) Del(ctx context.Context, key string) error {
+	args := m.Called(ctx, key)
 	return args.Error(0)
 }
 
@@ -63,6 +74,7 @@ func createValidBill() *domain.Bill {
 		Image:       &domain.Image{Name: "mockImageData"},
 		DueDate:     time.Now().Add(3 * 24 * time.Hour),
 		ApartmentID: common.NewRandomID(),
+		Status:      domain.PaymentStatusUnpaid,
 	}
 }
 
@@ -81,7 +93,7 @@ func TestAddBill_SuccessWithImage(t *testing.T) {
 
 	bill := createValidBill()
 
-	storage.On("Set", mock.Anything, bill.Image).Return(nil)
+	storage.On("FPut", ctx, mock.Anything, mock.Anything).Return(nil)
 	repo.On("Create", ctx, bill).Return(bill, nil)
 
 	result, err := svc.AddBill(ctx, bill)
@@ -139,7 +151,7 @@ func TestAddBill_ImageStorageError(t *testing.T) {
 
 	bill := createValidBill()
 
-	storage.On("Set", mock.Anything, bill.Image).Return(errors.New("storage failed"))
+	storage.On("FPut", ctx, mock.Anything, mock.Anything).Return(errors.New("storage failed"))
 
 	result, err := svc.AddBill(ctx, bill)
 
@@ -158,7 +170,7 @@ func TestGetBill_SuccessWithImage(t *testing.T) {
 	expectedBill := createValidBill()
 
 	repo.On("Read", ctx, filter).Return(expectedBill, nil)
-	storage.On("Get", expectedBill.ImageID.String()).Return(expectedBill.Image)
+	storage.On("FGet", ctx, mock.Anything, mock.Anything).Return(nil)
 
 	result, err := svc.GetBill(ctx, filter)
 
@@ -179,7 +191,8 @@ func TestGetBill_SuccessBadImageFormat(t *testing.T) {
 	bill.Image = nil
 
 	repo.On("Read", ctx, filter).Return(bill, nil)
-	storage.On("Get", bill.ImageID.String()).Return("not-an-image") // bad format
+	storage.On("FGet", ctx, mock.Anything, mock.Anything).
+		Return(errors.New("failed to get image"))
 
 	result, err := svc.GetBill(ctx, filter)
 
