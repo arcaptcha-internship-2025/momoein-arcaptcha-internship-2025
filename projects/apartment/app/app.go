@@ -14,6 +14,7 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/minio"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/postgres"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/smtp"
 )
@@ -95,8 +96,16 @@ func (a *app) mailService() apartmentPort.Email {
 }
 
 func (a *app) BillService() billPort.Service {
+	c := minio.MustNewClient(
+		a.cfg.Minio.Endpoint,
+		a.cfg.Minio.AccessKey,
+		a.cfg.Minio.SecretKey,
+	)
 	if a.billService == nil {
-		a.billService = bill.NewService(storage.NewBillRepo(a.db), nil) // TODO storage
+		a.billService = bill.NewService(
+			storage.NewBillRepo(a.db),
+			storage.NewBillObjectStorage(c),
+		)
 	}
 	return a.billService
 }
