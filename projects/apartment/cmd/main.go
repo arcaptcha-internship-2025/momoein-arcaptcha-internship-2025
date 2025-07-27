@@ -13,15 +13,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var configPath = flag.String("config", "config.json", "configuration file path, it must be json")
+var envfile = flag.String("env-file", ".env", "environment file path.")
 
 func main() {
 	flag.Parse()
 
-	if v := os.Getenv("CONFIG_FILE"); len(v) > 0 {
-		*configPath = v
+	if v := os.Getenv("ENV_FILE"); len(v) > 0 {
+		*envfile = v
 	}
-	cfg := config.MustReadJson(*configPath)
+	cfg := config.MustReadEnv(*envfile)
 
 	appLogger := logger.NewZapLogger(logger.ModeProduction)
 	if cfg.AppMode == config.Development {
