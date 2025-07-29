@@ -21,7 +21,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${SMAILA_HTTP_PORT:-1174}:${SMAILA_HTTP_PORT:-1174}"
+      - "${SMAILA_HTTP_PORT:-1174}:8080"
     networks:
       - apartment
 
