@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/joho/godotenv"
 )
 
 func MustReadJson(path string) Config {
@@ -25,10 +24,7 @@ func ReadJson(path string) (Config, error) {
 	return cfg, json.Unmarshal(b, &cfg)
 }
 
-func ReadEnv(filenames ...string) (Config, error) {
-	if err := godotenv.Load(filenames...); err != nil {
-		return Config{}, nil
-	}
+func ReadEnv() (Config, error) {
 	cfg, err := env.ParseAs[Config]()
 	if err != nil {
 		return Config{}, err
@@ -36,8 +32,8 @@ func ReadEnv(filenames ...string) (Config, error) {
 	return cfg, nil
 }
 
-func MustReadEnv(filenames ...string) Config {
-	cfg, err := ReadEnv(filenames...)
+func MustReadEnv() Config {
+	cfg, err := ReadEnv()
 	if err != nil {
 		panic(err)
 	}

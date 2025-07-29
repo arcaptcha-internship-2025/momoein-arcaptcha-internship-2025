@@ -10,10 +10,11 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
-var envfile = flag.String("env-file", ".env", "environment file path.")
+var envfile = flag.String("env-file", "", "environment file path.")
 
 func main() {
 	flag.Parse()
@@ -21,7 +22,13 @@ func main() {
 	if v := os.Getenv("ENV_FILE"); len(v) > 0 {
 		*envfile = v
 	}
-	cfg := config.MustReadEnv(*envfile)
+	if len(*envfile) > 0 {
+		if err := godotenv.Load(*envfile); err != nil {
+			panic("failed to load env file: " + err.Error())
+		}
+	}
+
+	cfg := config.MustReadEnv()
 
 	appLogger := logger.NewZapLogger(logger.ModeProduction)
 	if cfg.AppMode == config.Development {
