@@ -14,7 +14,7 @@ services:
 
   smaila:
     container_name: apartment-smaila-dev
-    image: ghcr.io/cactusbros/smaila:v0.2.2
+    image: ghcr.io/cactusbros/smaila:v0.2.3
     restart: unless-stopped
     env_file:
       - .smaila.env
