@@ -11,7 +11,7 @@ var inviteEmailTemplate string
 
 type InviteData struct {
 	Name          string
-	EventName     string
+	ApartmentName string
 	Message       string
 	RSVPLink      string
 	OrganizerName string
