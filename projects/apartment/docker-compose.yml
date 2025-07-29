@@ -1,39 +1,69 @@
 services:
-  dev-db:
-    container_name: apartment-dev-db
+  db:
+    container_name: apartment-db
     image: postgres:14.18-bookworm
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres # default db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "54321:5432"
+      - "${DB_PORT:-54321}:5432"
+    networks:
+      - apartment
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   smaila:
-    container_name: apartment-smaila-dev
+    container_name: apartment-smaila
     image: ghcr.io/cactusbros/smaila:v0.2.3
     restart: unless-stopped
     env_file:
-      - .smaila.env
+      - .env
     ports:
-      - $HTTP_PORT:$HTTP_PORT
+      - "${SMAILA_HTTP_PORT:-1174}:${SMAILA_HTTP_PORT:-1174}"
+    networks:
+      - apartment
 
   minio:
     image: quay.io/minio/minio:latest
-    container_name: apartment-minio-dev
+    container_name: apartment-minio
     ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Web UI
+      - "${MINIO_S3_API_PORT:-9000}:9000" # S3 API
+      - "${MINIO_WEB_UI_PORT:-9001}:9001" # Web UI
+    networks:
+      - apartment
     env_file:
       - .env
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
 
+  api:
+    container_name: apartment-api
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    networks:
+      - apartment
+    depends_on:
+      - db
+      - minio
+      - smaila
+
 volumes:
   postgres_data:
     driver: local
   minio-data:
+    driver: local
+
+networks:
+  apartment:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.200.0/24
