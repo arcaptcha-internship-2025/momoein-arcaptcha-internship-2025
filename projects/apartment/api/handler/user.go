@@ -109,6 +109,44 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service], cfg config.Auth
 	})
 }
 
+func RefreshTokenHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(r.Context())
+
+		var req struct {
+			RefreshToken string `json:"refreshToken"`
+		}
+		if err := BodyParse(r, &req); err != nil {
+			BadRequestError(w, r, err.Error())
+			return
+		}
+
+		claims, err := appjwt.ParseToken(req.RefreshToken, []byte(cfg.JWTSecret))
+		if err != nil {
+			log.Error("refresh token", zap.Error(err))
+			BadRequestError(w, r, err.Error())
+			return
+		}
+
+		accessToken, err := createJWTToken(cfg.JWTSecret, claims.UserID, claims.UserEMail, cfg.AccessExpiry)
+		if err != nil {
+			log.Error("refresh token", zap.Error(err))
+			InternalServerError(w, r)
+			return
+		}
+
+		SetTokenCookie(w, cfg, accessToken, req.RefreshToken)
+		err = WriteJson(w, http.StatusOK, &dto.AuthResponse{
+			AccessToken:  accessToken,
+			RefreshToken: req.RefreshToken,
+		})
+		if err != nil {
+			log.Error("refresh token", zap.Error(err))
+			InternalServerError(w, r)
+		}
+	})
+}
+
 func GenerateAuthResponse(cfg config.AuthConfig, id, email string) (*dto.AuthResponse, error) {
 	accessToken, err := createJWTToken(cfg.JWTSecret, id, email, cfg.AccessExpiry)
 	if err != nil {
