@@ -11,12 +11,12 @@ import (
 	billPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/email"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/minio"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/postgres"
-	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/smtp"
 )
 
 type app struct {
@@ -25,7 +25,7 @@ type app struct {
 	db               *sql.DB
 	userService      userPort.Service
 	apartmentService apartmentPort.Service
-	apartmentMail    apartmentPort.Email
+	apartmentMail    apartmentPort.EmailSender
 	billService      billPort.Service
 }
 
@@ -81,16 +81,15 @@ func (a *app) ApartmentService(ctx context.Context) apartmentPort.Service {
 	if a.apartmentService == nil {
 		a.apartmentService = apartment.NewService(
 			storage.NewApartmentRepo(a.db),
-			a.mailService(),
+			a.apartmentMailService(),
 		)
 	}
 	return a.apartmentService
 }
 
-func (a *app) mailService() apartmentPort.Email {
-	c := a.Config().SMTP
+func (a *app) apartmentMailService() apartmentPort.EmailSender {
 	if a.apartmentMail == nil {
-		a.apartmentMail = smtp.NewSMTPService(c.Host, c.Port, c.From, c.Username, c.Password)
+		a.apartmentMail = email.NewApartmentEmail(a.cfg.Smaila.Endpoint)
 	}
 	return a.apartmentMail
 }

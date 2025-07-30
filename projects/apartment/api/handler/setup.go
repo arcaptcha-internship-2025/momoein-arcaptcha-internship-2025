@@ -37,8 +37,9 @@ func RegisterAPI(r *router.Router, app app.App) {
 		r.Use(middleware.NewAuth(secret))
 
 		svcGetter := ApartmentServiceGetter(app)
+		acceptURL := app.Config().BaseURL + "/api/v1/apartment/invite/accept"
 		r.Post("/", AddApartment(svcGetter))
-		r.Post("/invite", InviteApartmentMember(svcGetter))
+		r.Post("/invite", InviteApartmentMember(svcGetter, acceptURL))
 		r.Get("/invite/accept", AcceptApartmentInvite(svcGetter))
 
 		bilSvcGtr := BillServiceGetter(app)

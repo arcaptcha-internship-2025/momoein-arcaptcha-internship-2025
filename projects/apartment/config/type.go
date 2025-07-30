@@ -1,12 +1,14 @@
 package config
 
 type Config struct {
-	AppMode AppModeType `json:"appMode" env:"APP_MODE"`
-	DB      DBConfig    `json:"db"`
-	HTTP    HTTPConfig  `json:"http"`
-	Auth    AuthConfig  `json:"auth"`
-	SMTP    SMTPConfig  `json:"smtp"`
-	Minio   MinioConfig `json:"minio"`
+	AppMode AppModeType  `json:"appMode" env:"APP_MODE"`
+	DB      DBConfig     `json:"db"`
+	HTTP    HTTPConfig   `json:"http"`
+	Auth    AuthConfig   `json:"auth"`
+	SMTP    SMTPConfig   `json:"smtp"`
+	Minio   MinioConfig  `json:"minio"`
+	BaseURL string       `json:"baseURL" env:"BASE_URL"`
+	Smaila  SmailaConfig `json:"smaila"`
 }
 
 type AppModeType string
@@ -48,4 +50,8 @@ type MinioConfig struct {
 	Endpoint  string `json:"endpoint" env:"MINIO_ENDPOINT"`
 	AccessKey string `json:"accessKey" env:"MINIO_ACCESS_KEY"`
 	SecretKey string `json:"secretKey" env:"MINIO_SECRET_KEY"`
+}
+
+type SmailaConfig struct {
+	Endpoint string `json:"endpoint" env:"SMAILA_ENDPOINT"`
 }

@@ -13,6 +13,7 @@ type Service interface {
 		ctx context.Context,
 		adminID, apartmentID common.ID,
 		userEmail common.Email,
+		acceptURL string,
 	) (
 		*domain.Invite, error,
 	)
@@ -33,6 +34,6 @@ type Repo interface {
 	AcceptInvite(ctx context.Context, token string) error
 }
 
-type Email interface {
-	Send(to []string, msg []byte) error
+type EmailSender interface {
+	Send(to []string, msg *common.EmailMessage) error
 }

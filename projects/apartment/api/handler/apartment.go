@@ -48,7 +48,7 @@ func AddApartment(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
 	})
 }
 
-func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
+func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service], acceptURL string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
@@ -73,7 +73,7 @@ func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service]) http.
 			return
 		}
 
-		member, err := svc.InviteMember(r.Context(), adminId, req.ApartmentID, common.Email(req.UserEmail))
+		member, err := svc.InviteMember(r.Context(), adminId, req.ApartmentID, common.Email(req.UserEmail), acceptURL)
 		if err != nil {
 			log.Error("invite member", zap.Error(err))
 			Error(w, r, http.StatusInternalServerError, "InternalServerError")

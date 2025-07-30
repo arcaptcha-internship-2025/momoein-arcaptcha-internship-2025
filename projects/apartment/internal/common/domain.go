@@ -29,3 +29,9 @@ func (e Email) IsValid() bool {
 	r := regexp.MustCompile(emailRegex)
 	return r.Match([]byte(e))
 }
+
+type EmailMessage struct {
+	Subject string
+	Body    []byte
+	IsHTML  bool
+}

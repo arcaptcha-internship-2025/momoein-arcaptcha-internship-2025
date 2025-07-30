@@ -58,10 +58,10 @@ func (m *MockRepo) AcceptInvite(
 
 type MockEmail struct {
 	mock.Mock
-	port.Email
+	port.EmailSender
 }
 
-func (m *MockEmail) Send(to []string, msg []byte) error {
+func (m *MockEmail) Send(to []string, msg *common.EmailMessage) error {
 	args := m.Called(to, msg)
 	return args.Error(0)
 }
@@ -70,6 +70,14 @@ var (
 	log = logger.NewConsoleZapLogger(logger.ModeDevelopment)
 	ctx = appctx.New(context.Background(), appctx.WithLogger(log))
 )
+
+func getAcceptURL() url.URL {
+	return url.URL{
+		Scheme: "http",
+		Host:   "127.0.0.1:8080",
+		Path:   "api/v1/apartment/invite/accept",
+	}
+}
 
 func TestCreateApartment_Success(t *testing.T) {
 	repo := new(MockRepo)
@@ -99,6 +107,7 @@ func TestInviteMember_Success(t *testing.T) {
 	adminID := common.NewRandomID()
 	apartmentID := common.NewRandomID()
 	userEmail := common.Email("test@example.com")
+	acceptURL := getAcceptURL()
 
 	apartmentObj := &domain.Apartment{
 		ID:      apartmentID,
@@ -116,7 +125,7 @@ func TestInviteMember_Success(t *testing.T) {
 	repo.On("InviteMember", ctx, apartmentID, mock.AnythingOfType("*domain.Invite")).Return(invite, nil)
 	email.On("Send", []string{userEmail.String()}, mock.Anything).Return(nil)
 
-	result, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail)
+	result, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail, acceptURL.String())
 
 	assert.NoError(t, err)
 	if assert.NotNil(t, result) {
@@ -133,6 +142,7 @@ func TestInviteMember_NotAdmin(t *testing.T) {
 	adminID := common.NewRandomID()
 	apartmentID := common.NewRandomID()
 	userEmail := common.Email("user@example.com")
+	acceptURL := getAcceptURL()
 
 	apt := &domain.Apartment{
 		ID:      apartmentID,
@@ -141,7 +151,7 @@ func TestInviteMember_NotAdmin(t *testing.T) {
 
 	repo.On("Get", ctx, &domain.ApartmentFilter{ID: apartmentID}).Return(apt, nil)
 
-	invite, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail)
+	invite, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail, acceptURL.String())
 
 	assert.Error(t, err)
 	assert.Nil(t, invite)
