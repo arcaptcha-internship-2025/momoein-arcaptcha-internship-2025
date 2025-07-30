@@ -27,12 +27,6 @@ func getSignUpHandler(svcGetter ServiceGetter[userPort.Service], cfg config.Auth
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
-		// returnTo := r.URL.Query().Get("return_to")
-		// if returnTo == "" {
-		// 	returnTo = "/" // fallback
-		// }
-		// http.Redirect(w, r, returnTo, http.StatusFound)
-
 		var req dto.SignUpRequest
 		if err := BodyParse(r, &req); err != nil {
 			http.Error(w, ErrBadRequest.Error(), http.StatusBadRequest)

@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"net/url"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
@@ -106,9 +105,8 @@ func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.
 			switch {
 			case errors.Is(err, apartment.ErrInvalidToken):
 				Error(w, r, http.StatusBadRequest)
-			case errors.Is(err, apartment.ErrUnregisteredUser): // ??
-				redirectURL := "/sign-up?return_to=" + url.QueryEscape(r.URL.String())
-				http.Redirect(w, r, redirectURL, http.StatusFound)
+			case errors.Is(err, apartment.ErrUnregisteredUser):
+				Error(w, r, http.StatusUnauthorized, "unregistered user")
 			default:
 				log.Error("accept invite", zap.Error(err))
 				Error(w, r, http.StatusInternalServerError)
