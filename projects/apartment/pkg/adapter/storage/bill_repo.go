@@ -109,3 +109,84 @@ func (r *billRepo) Read(ctx context.Context, filter *domain.BillFilter) (*domain
 
 	return &b, nil
 }
+
+type UserBillShare struct {
+	BillID       string
+	BillName     string
+	TotalAmount  int
+	MemberCount  int
+	SharePerUser int
+	UserPaid     int
+	BalanceDue   int
+}
+
+func (r *billRepo) GetUserBillShares(userID string) ([]UserBillShare, error) {
+	query := `
+        SELECT
+            b.id,
+            b.name,
+            b.amount,
+            COUNT(ua2.user_id) AS member_count,
+            (b.amount / COUNT(ua2.user_id)) AS user_share,
+            COALESCE(SUM(p.amount), 0) AS user_paid,
+            (b.amount / COUNT(ua2.user_id)) - COALESCE(SUM(p.amount), 0) AS balance_due
+        FROM users_apartments ua
+        JOIN bills b ON b.apartment_id = ua.apartment_id
+        JOIN users_apartments ua2 ON ua2.apartment_id = b.apartment_id AND ua2.created_at <= b.created_at
+        LEFT JOIN payments p ON p.bill_id = b.id AND p.payer_id = ua.user_id
+        WHERE ua.user_id = $1
+        GROUP BY b.id, b.name, b.amount;
+    `
+
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var shares []UserBillShare
+	for rows.Next() {
+		var s UserBillShare
+		err := rows.Scan(
+			&s.BillID,
+			&s.BillName,
+			&s.TotalAmount,
+			&s.MemberCount,
+			&s.SharePerUser,
+			&s.UserPaid,
+			&s.BalanceDue)
+		if err != nil {
+			return nil, err
+		}
+		shares = append(shares, s)
+	}
+	return shares, nil
+}
+
+func (r *billRepo) GetUserTotalDebt(userID string) (int, error) {
+	query := `
+        SELECT SUM(user_share - COALESCE(user_paid, 0)) AS total_debt FROM (
+            SELECT
+                b.id,
+                (b.amount / COUNT(ua2.user_id)) AS user_share,
+                COALESCE(SUM(p.amount), 0) AS user_paid
+            FROM users_apartments ua
+            JOIN bills b ON b.apartment_id = ua.apartment_id
+            JOIN users_apartments ua2 ON ua2.apartment_id = b.apartment_id AND ua2.created_at <= b.created_at
+            LEFT JOIN payments p ON p.bill_id = b.id AND p.payer_id = ua.user_id
+            WHERE ua.user_id = $1
+            GROUP BY b.id, b.amount
+        ) AS bill_balances;
+    `
+
+	var totalDebt sql.NullInt64
+	err := r.db.QueryRow(query, userID).Scan(&totalDebt)
+	if err != nil {
+		return 0, err
+	}
+
+	if !totalDebt.Valid {
+		return 0, nil
+	}
+	return int(totalDebt.Int64), nil
+}
