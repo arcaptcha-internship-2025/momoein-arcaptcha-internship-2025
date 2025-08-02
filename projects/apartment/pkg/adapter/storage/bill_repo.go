@@ -10,6 +10,8 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage/types"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/fp"
 )
 
 type billRepo struct {
@@ -110,17 +112,7 @@ func (r *billRepo) Read(ctx context.Context, filter *domain.BillFilter) (*domain
 	return &b, nil
 }
 
-type UserBillShare struct {
-	BillID       string
-	BillName     string
-	TotalAmount  int
-	MemberCount  int
-	SharePerUser int
-	UserPaid     int
-	BalanceDue   int
-}
-
-func (r *billRepo) GetUserBillShares(userID string) ([]UserBillShare, error) {
+func (r *billRepo) GetUserBillShares(ctx context.Context, userID common.ID) ([]domain.UserBillShare, error) {
 	query := `
         SELECT
             b.id,
@@ -138,15 +130,15 @@ func (r *billRepo) GetUserBillShares(userID string) ([]UserBillShare, error) {
         GROUP BY b.id, b.name, b.amount;
     `
 
-	rows, err := r.db.Query(query, userID)
+	rows, err := r.db.Query(query, userID.String())
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var shares []UserBillShare
+	var shares []types.UserBillShare
 	for rows.Next() {
-		var s UserBillShare
+		var s types.UserBillShare
 		err := rows.Scan(
 			&s.BillID,
 			&s.BillName,
@@ -160,10 +152,12 @@ func (r *billRepo) GetUserBillShares(userID string) ([]UserBillShare, error) {
 		}
 		shares = append(shares, s)
 	}
-	return shares, nil
+	return fp.Mapper(shares, func(ubs types.UserBillShare) domain.UserBillShare {
+		return *types.UserBillShareStorageToDomain(&ubs)
+	}), nil
 }
 
-func (r *billRepo) GetUserTotalDebt(userID string) (int, error) {
+func (r *billRepo) GetUserTotalDebt(ctx context.Context, userID common.ID) (int, error) {
 	query := `
         SELECT SUM(user_share - COALESCE(user_paid, 0)) AS total_debt FROM (
             SELECT
@@ -180,7 +174,7 @@ func (r *billRepo) GetUserTotalDebt(userID string) (int, error) {
     `
 
 	var totalDebt sql.NullInt64
-	err := r.db.QueryRow(query, userID).Scan(&totalDebt)
+	err := r.db.QueryRow(query, userID.String()).Scan(&totalDebt)
 	if err != nil {
 		return 0, err
 	}
