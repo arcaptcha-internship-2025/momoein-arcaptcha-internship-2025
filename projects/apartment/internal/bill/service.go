@@ -77,3 +77,26 @@ func (s *service) GetBillImage(ctx context.Context, imageID common.ID) (string, 
 	}
 	return path, nil
 }
+
+func (s *service) GetUserBillShares(
+	ctx context.Context, userID common.ID,
+) (
+	[]domain.UserBillShare, error,
+) {
+	ubs, err := s.repo.GetUserBillShares(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if len(ubs) == 0 {
+		return nil, ErrNotFound
+	}
+	return ubs, nil
+}
+
+func (s *service) GetUserTotalDebt(ctx context.Context, userID common.ID) (int, error) {
+	debt, err := s.repo.GetUserTotalDebt(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	return debt, nil
+}
