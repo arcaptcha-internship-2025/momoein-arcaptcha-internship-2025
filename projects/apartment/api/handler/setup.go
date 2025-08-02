@@ -29,8 +29,10 @@ func RegisterAPI(r *router.Router, app app.App) {
 	secret := []byte(app.Config().Auth.JWTSecret)
 
 	r.Group("/auth", func(r *router.Router) {
-		r.Post("/sign-up", getSignUpHandler(UserServiceGetter(app), app.Config().Auth))
-		r.Get("/sign-in", getSignInHandler(UserServiceGetter(app), app.Config().Auth))
+		svcGetter := UserServiceGetter(app)
+		r.Post("/sign-up", getSignUpHandler(svcGetter, app.Config().Auth))
+		r.Get("/sign-in", getSignInHandler(svcGetter, app.Config().Auth))
+		r.Get("/refresh-token", RefreshTokenHandler(svcGetter, app.Config().Auth))
 	})
 
 	r.Group("/apartment", func(r *router.Router) {
