@@ -35,6 +35,16 @@ func (m *MockRepo) Read(ctx context.Context, f *domain.BillFilter) (*domain.Bill
 	return args.Get(0).(*domain.Bill), args.Error(1)
 }
 
+func (m *MockRepo) GetUserBillShares(ctx context.Context, userID common.ID) ([]domain.UserBillShare, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).([]domain.UserBillShare), args.Error(1)
+}
+
+func (m *MockRepo) GetUserTotalDebt(ctx context.Context, userID common.ID) (int, error) {
+	args := m.Called(ctx, userID)
+	return args.Int(0), args.Error(1)
+}
+
 type MockStorage struct {
 	mock.Mock
 }
@@ -221,4 +231,16 @@ func TestGetBill_RepoError(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), ErrOnGetBill.Error())
 	repo.AssertExpectations(t)
+}
+
+func TestGetBillImage_Success(t *testing.T) {
+	// TODO
+}
+
+func TestGetBillImage_NotFound(t *testing.T) {
+	// TODO
+}
+
+func TestGetBillImage_ObjectStorageFail(t *testing.T) {
+	// TODO
 }
