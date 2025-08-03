@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/config"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
@@ -17,6 +18,7 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/minio"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/postgres"
+	"go.uber.org/zap"
 )
 
 type app struct {
@@ -49,6 +51,10 @@ func New(ctx context.Context, cfg config.Config) (App, error) {
 	}
 	db, err := postgres.NewPSQLConn(opt)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = checkMinio(cfg.Minio); err != nil {
 		return nil, err
 	}
 
@@ -94,16 +100,40 @@ func (a *app) apartmentMailService() apartmentPort.EmailSender {
 	return a.apartmentMail
 }
 
-func (a *app) BillService() billPort.Service {
-	c := minio.MustNewClient(
+func checkMinio(cfg config.MinioConfig) error {
+	return minio.Ping(
+		cfg.Endpoint,
+		cfg.AccessKey,
+		cfg.SecretKey,
+		false,
+		3*time.Second)
+}
+
+func (a *app) billObjectStorage() (billPort.ObjectStorage, error) {
+	c, err := minio.NewClient(
 		a.cfg.Minio.Endpoint,
 		a.cfg.Minio.AccessKey,
-		a.cfg.Minio.SecretKey,
-	)
+		a.cfg.Minio.SecretKey)
+	if err != nil {
+		return nil, err
+	}
+	bos, err := storage.NewBillObjectStorage(c)
+	if err != nil {
+		return nil, err
+	}
+	return bos, err
+}
+
+func (a *app) BillService() billPort.Service {
+	bos, err := a.billObjectStorage()
+	if err != nil {
+		a.logger.Error("", zap.Error(err))
+	}
+
 	if a.billService == nil {
 		a.billService = bill.NewService(
 			storage.NewBillRepo(a.db),
-			storage.MustNewBillObjectStorage(c),
+			bos,
 		)
 	}
 	return a.billService
