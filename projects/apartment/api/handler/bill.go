@@ -17,6 +17,7 @@ import (
 	billPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
+	appjwt "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/jwt"
 	"go.uber.org/zap"
 )
 
@@ -260,5 +261,33 @@ func GetBillImage(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 			log.Error("GetBillImage - writing response", zap.Error(err))
 		}
 
+	})
+}
+
+func GetUserTotalDept(svcGetter ServiceGetter[billPort.Service]) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(r.Context())
+		svc := svcGetter(r.Context())
+
+		userID, ok := r.Context().Value(appjwt.UserIDKey).(string)
+		if !ok {
+			log.Error("invalid userid type")
+			InternalServerError(w, r)
+			return
+		}
+
+		id := common.IDFromText(userID)
+		dbt, err := svc.GetUserTotalDebt(r.Context(), id)
+		if err != nil {
+			log.Error("", zap.Error(err))
+			InternalServerError(w, r)
+			return
+		}
+
+		resp := &dto.UserTotalDebt{TotalDebt: dbt}
+		if err = WriteJson(w, http.StatusOK, resp); err != nil {
+			log.Error("", zap.Error(err))
+			InternalServerError(w, r)
+		}
 	})
 }

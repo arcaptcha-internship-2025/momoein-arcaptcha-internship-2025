@@ -59,6 +59,11 @@ type InviteUserToApartmentRequest struct {
 	UserEmail   common.Email `json:"userEmail"`
 	ApartmentID common.ID    `json:"apartmentID"`
 }
+
+type UserTotalDebt struct {
+	TotalDebt int `json:"totalDebt"`
+}
+
 type InviteUserToApartmentResponse struct {
 }
 
@@ -86,7 +91,7 @@ type GetBillRequest struct {
 	ID common.ID `json:"id" form:"id"`
 }
 
-type GetBillImageRequest struct{
+type GetBillImageRequest struct {
 	ImageID common.ID `json:"imageID"`
 }
 
