@@ -157,14 +157,14 @@ func (b Bill) IsPaid() bool {
 }
 
 type UserBillShare struct {
-	UserID       common.ID
-	BillID       common.ID
-	BillName     string
-	TotalAmount  int
-	MemberCount  int
-	SharePerUser int
-	UserPaid     int
-	BalanceDue   int
+	UserID       common.ID `json:"userId"`
+	BillID       common.ID `json:"billId"`
+	BillName     string    `json:"billName"`
+	TotalAmount  int       `json:"totalAmount"`
+	MemberCount  int       `json:"memberCount"`
+	SharePerUser int       `json:"sharePerUser"`
+	UserPaid     int       `json:"userPaid"`
+	BalanceDue   int       `json:"balanceDue"`
 }
 
 type PaymentStatus string

@@ -150,6 +150,7 @@ func (r *billRepo) GetUserBillShares(ctx context.Context, userID common.ID) ([]d
 		if err != nil {
 			return nil, err
 		}
+		s.UserID = userID.String()
 		shares = append(shares, s)
 	}
 	return fp.Mapper(shares, func(ubs types.UserBillShare) domain.UserBillShare {

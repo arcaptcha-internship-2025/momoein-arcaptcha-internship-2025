@@ -54,6 +54,7 @@ func RegisterAPI(r *router.Router, app app.App) {
 	r.Group("/user", func(r *router.Router) {
 		r.Use(middleware.NewAuth(secret))
 		r.Get("/total-debt", GetUserTotalDept(bilSvcGtr))
+		r.Get("/bill-shares", GetUserBillShares(bilSvcGtr))
 	})
 }
 

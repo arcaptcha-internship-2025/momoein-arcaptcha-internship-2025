@@ -3,6 +3,7 @@ package dto
 import (
 	"time"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 )
 
@@ -93,6 +94,10 @@ type GetBillRequest struct {
 
 type GetBillImageRequest struct {
 	ImageID common.ID `json:"imageID"`
+}
+
+type BillSharesResponse struct {
+	BillShares []domain.UserBillShare `json:"billShares"`
 }
 
 type RemoveBillRequest struct{}

@@ -291,3 +291,31 @@ func GetUserTotalDept(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 		}
 	})
 }
+
+func GetUserBillShares(svcGetter ServiceGetter[billPort.Service]) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(r.Context())
+		svc := svcGetter(r.Context())
+
+		userID, ok := r.Context().Value(appjwt.UserIDKey).(string)
+		if !ok {
+			log.Error("invalid userid type")
+			InternalServerError(w, r)
+			return
+		}
+
+		id := common.IDFromText(userID)
+		billShares, err := svc.GetUserBillShares(r.Context(), id)
+		if err != nil {
+			log.Error("", zap.Error(err))
+			InternalServerError(w, r)
+			return
+		}
+
+		resp := dto.BillSharesResponse{BillShares: billShares}
+		if err = WriteJson(w, http.StatusOK, resp); err != nil {
+			log.Error("", zap.Error(err))
+			InternalServerError(w, r)
+		}
+	})
+}
