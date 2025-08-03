@@ -14,6 +14,12 @@ func NewRandomID() ID {
 	return uuid.New()
 }
 
+func IDFromText(s string) ID {
+	id := NilID
+	_ = id.UnmarshalText([]byte(s))
+	return id
+}
+
 func ValidateID(id string) error {
 	return uuid.Validate(id)
 }
