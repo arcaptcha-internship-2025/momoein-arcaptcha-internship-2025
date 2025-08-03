@@ -3,6 +3,8 @@ package bill
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -234,13 +236,45 @@ func TestGetBill_RepoError(t *testing.T) {
 }
 
 func TestGetBillImage_Success(t *testing.T) {
-	// TODO
+	repo := new(MockRepo)
+	storage := new(MockStorage)
+	svc := NewService(repo, storage)
+
+	imageID := common.NewRandomID()
+	expectedPath := filepath.Join(os.TempDir(), imageID.String())
+
+	storage.
+		On("FGet", mock.Anything, imageID.String(), expectedPath).
+		Return(nil)
+
+	path, err := svc.GetBillImage(context.Background(), imageID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPath, path)
+	storage.AssertExpectations(t)
+}
+
+func TestGetBillImage_ObjectStorageError(t *testing.T) {
+	repo := new(MockRepo)
+	storage := new(MockStorage)
+	svc := NewService(repo, storage)
+
+	imageID := common.NewRandomID()
+	expectedPath := filepath.Join(os.TempDir(), imageID.String())
+	storageErr := errors.New("storage unavailable")
+
+	storage.
+		On("FGet", mock.Anything, imageID.String(), expectedPath).
+		Return(storageErr)
+
+	path, err := svc.GetBillImage(context.Background(), imageID)
+
+	assert.Error(t, err)
+	assert.Empty(t, path)
+	assert.Contains(t, err.Error(), "storage unavailable")
+	storage.AssertExpectations(t)
 }
 
 func TestGetBillImage_NotFound(t *testing.T) {
-	// TODO
-}
-
-func TestGetBillImage_ObjectStorageFail(t *testing.T) {
 	// TODO
 }
