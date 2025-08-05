@@ -21,9 +21,9 @@ func Run(app app.App) error {
 func RegisterAPI(r *router.Router, app app.App) {
 	jwtSecret := []byte(app.Config().Auth.JWTSecret)
 
-	usrSvcGetter := UserServiceGetter(app)
+	usrSvcGtr := UserServiceGetter(app)
 	bilSvcGtr := BillServiceGetter(app)
-	aptSvcGetter := ApartmentServiceGetter(app)
+	aptSvcGtr := ApartmentServiceGetter(app)
 
 	r.Use(
 		middleware.SetRequestContext(app),
@@ -34,21 +34,23 @@ func RegisterAPI(r *router.Router, app app.App) {
 	r.Group("/api/v1", func(r *router.Router) {
 
 		r.Group("/auth", func(r *router.Router) {
-			r.Post("/sign-up", getSignUpHandler(usrSvcGetter, app.Config().Auth))
-			r.Get("/sign-in", getSignInHandler(usrSvcGetter, app.Config().Auth))
-			r.Get("/refresh-token", RefreshTokenHandler(usrSvcGetter, app.Config().Auth))
+			r.Post("/sign-up", getSignUpHandler(usrSvcGtr, app.Config().Auth))
+			r.Get("/sign-in", getSignInHandler(usrSvcGtr, app.Config().Auth))
+			r.Get("/refresh-token", RefreshTokenHandler(usrSvcGtr, app.Config().Auth))
 		})
 
 		r.Group("/apartment", func(r *router.Router) {
 			r.Use(middleware.NewAuth(jwtSecret))
 			acceptURL := app.Config().BaseURL + "/api/v1/apartment/invite/accept"
 
-			r.Post("/", AddApartment(aptSvcGetter))
-			r.Post("/invite", InviteApartmentMember(aptSvcGetter, acceptURL))
-			r.Get("/invite/accept", AcceptApartmentInvite(aptSvcGetter))
+			r.Post("/", AddApartment(aptSvcGtr))
+			r.Post("/invite", InviteApartmentMember(aptSvcGtr, acceptURL))
+			r.Get("/invite/accept", AcceptApartmentInvite(aptSvcGtr))
 		})
 
 		r.Group("/bill", func(r *router.Router) {
+			r.Use(middleware.NewAuth(jwtSecret))
+
 			r.Post("/", AddBill(bilSvcGtr))
 			r.Get("/", GetBill(bilSvcGtr))
 			r.Get("/image", GetBillImage(bilSvcGtr))
@@ -60,6 +62,7 @@ func RegisterAPI(r *router.Router, app app.App) {
 			r.Get("/total-debt", GetUserTotalDept(bilSvcGtr))
 			r.Get("/bill-shares", GetUserBillShares(bilSvcGtr))
 		})
+
 	})
 }
 
