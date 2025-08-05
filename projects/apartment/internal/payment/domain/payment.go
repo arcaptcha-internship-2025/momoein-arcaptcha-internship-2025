@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 )
 
 // PaymentStatus represents the current status of a payment
@@ -19,20 +19,25 @@ const (
 type CallbackData map[string]any
 
 type Payment struct {
-	ID        uuid.UUID  `json:"id"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	ID        common.ID  `json:"id"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	DeletedAt *time.Time `json:"deletedAt,omitempty"`
 
-	BillID  uuid.UUID `json:"bill_id"`
-	PayerID uuid.UUID `json:"payer_id"`
+	BillID  common.ID `json:"billId"`
+	PayerID common.ID `json:"payerId"`
 	Amount  int64     `json:"amount"`
-	PaidAt  time.Time `json:"payment_date"`
+	PaidAt  time.Time `json:"paymentDate"`
 
 	Status        PaymentStatus `json:"status"`
 	Gateway       string        `json:"gateway"`
-	TransactionID string        `json:"transaction_id,omitempty"`
-	CallbackData  CallbackData  `json:"callback_data,omitempty"` // Use map for parsed JSONB
+	TransactionID string        `json:"transactionId,omitempty"`
+	CallbackData  CallbackData  `json:"callbackData,omitempty"` // Use map for parsed JSONB
+}
+
+type BillWithAmount struct {
+	BillID common.ID
+	Amount int64
 }
 
 type GatewayType string
@@ -50,4 +55,12 @@ var validGateways = map[GatewayType]struct{}{
 func (g GatewayType) IsValid() bool {
 	_, ok := validGateways[g]
 	return ok
+}
+
+type Transaction struct {
+	Amount      int64             // Amount to be paid
+	PayerID     common.ID         // Who is paying
+	Bills       []BillWithAmount  // which bill this is for
+	CallbackURL string            // URL to hit after payment (e.g. /payment/callback)
+	Metadata    map[string]string // Optional: custom key-value data for tracking
 }

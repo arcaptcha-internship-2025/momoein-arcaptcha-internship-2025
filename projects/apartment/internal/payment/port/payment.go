@@ -8,18 +8,20 @@ import (
 )
 
 type Service interface {
-	PayBill(ctx context.Context, gateway domain.GatewayType, billID, userID common.ID) (redirectURL string, err error)
-	PayTotalDebt(ctx context.Context, gateway domain.GatewayType, userID common.ID) (redirectURL string, err error)
+	PayBill(ctx context.Context, gateway domain.GatewayType, billID, userID common.ID, callBackURL string) (redirectURL string, err error)
+	PayTotalDebt(ctx context.Context, gateway domain.GatewayType, userID common.ID, callBackURL string) (redirectURL string, err error)
 	HandleCallback(ctx context.Context, gateway domain.GatewayType, data map[string]string) error
 }
 
 type Repo interface {
 	CreatePayment(ctx context.Context, p *domain.Payment) (*domain.Payment, error)
+	BatchCreatePayment(ctx context.Context, ps []*domain.Payment) ([]*domain.Payment, error)
 	UpdateStatus(ctx context.Context, paymentID common.ID, s domain.PaymentStatus) error
 	UserBillBalanceDue(ctx context.Context, userId, billId common.ID) (int64, error)
+	UserBillsBalanceDue(ctx context.Context, userId common.ID) ([]domain.BillWithAmount, error)
 }
 
 type Gateway interface {
-	CreateTransaction(ctx context.Context, payment *domain.Payment) (redirectURL string, err error)
-	VerifyTransaction(ctx context.Context, data map[string]string) (bool, error)
+	CreateTransaction(ctx context.Context, tx domain.Transaction) (redirectURL string, err error)
+	VerifyTransaction(ctx context.Context, data map[string]string) error
 }
