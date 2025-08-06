@@ -151,20 +151,34 @@ func (r *paymentRepo) BatchCreatePayment(
 
 func (r *paymentRepo) UpdateStatus(
 	ctx context.Context,
-	paymentID common.ID,
-	s paymentd.PaymentStatus,
+	paymentIDs []common.ID,
+	status paymentd.PaymentStatus,
 ) error {
-	query := `
+	if len(paymentIDs) == 0 {
+		return nil
+	}
+
+	placeholders := make([]string, len(paymentIDs))
+	args := make([]any, 0, len(paymentIDs)+1)
+
+	args = append(args, status)
+	for i, id := range paymentIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+2) // start from $2
+		args = append(args, id)
+	}
+
+	query := fmt.Sprintf(`
 		UPDATE payments
 		SET status = $1,
 		    updated_at = NOW()
-		WHERE id = $2
-	`
+		WHERE id IN (%s)
+	`, strings.Join(placeholders, ", "))
 
-	res, err := r.db.ExecContext(ctx, query, s, paymentID)
+	res, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
+
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return err
