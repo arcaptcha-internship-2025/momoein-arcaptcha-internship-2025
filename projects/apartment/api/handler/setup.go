@@ -63,6 +63,16 @@ func RegisterAPI(r *router.Router, app app.App) {
 			r.Get("/bill-shares", GetUserBillShares(bilSvcGtr))
 		})
 
+		r.Group("/payment", func(r *router.Router) {
+			r.Post("/pay-bill", nil)
+			r.Post("/pay-total-debt", nil)
+			r.Get("/callback", nil)
+
+			r.Group("/mock-gateway", func(r *router.Router) {
+				r.Post("/pay", MockGatewayPay())
+				r.Get("/verify", MockGatewayVerify())
+			})
+		})
 	})
 }
 
