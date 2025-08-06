@@ -16,12 +16,12 @@ type Service interface {
 type Repo interface {
 	CreatePayment(ctx context.Context, p *domain.Payment) (*domain.Payment, error)
 	BatchCreatePayment(ctx context.Context, ps []*domain.Payment) ([]*domain.Payment, error)
-	UpdateStatus(ctx context.Context, paymentID common.ID, s domain.PaymentStatus) error
+	UpdateStatus(ctx context.Context, paymentID []common.ID, s domain.PaymentStatus) error
 	UserBillBalanceDue(ctx context.Context, userId, billId common.ID) (int64, error)
 	UserBillsBalanceDue(ctx context.Context, userId common.ID) ([]domain.BillWithAmount, error)
 }
 
 type Gateway interface {
 	CreateTransaction(ctx context.Context, tx domain.Transaction) (redirectURL string, err error)
-	VerifyTransaction(ctx context.Context, data map[string]string) error
+	VerifyTransaction(ctx context.Context, data map[string]string) (domain.Transaction, error)
 }

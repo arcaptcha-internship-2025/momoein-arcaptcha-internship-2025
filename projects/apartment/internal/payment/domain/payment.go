@@ -16,6 +16,22 @@ const (
 	PaymentCancelled PaymentStatus = "cancelled"
 )
 
+func (ps PaymentStatus) String() string {
+	return string(ps)
+}
+
+var validPaymentStatuses = map[PaymentStatus]struct{}{
+	PaymentPending:   {},
+	PaymentPaid:      {},
+	PaymentFailed:    {},
+	PaymentCancelled: {},
+}
+
+func (ps PaymentStatus) IsValid() bool {
+	_, ok := validPaymentStatuses[ps]
+	return ok
+}
+
 type CallbackData map[string]any
 
 type Payment struct {
@@ -58,6 +74,7 @@ func (g GatewayType) IsValid() bool {
 }
 
 type Transaction struct {
+	PaymentIDs  []common.ID
 	Amount      int64             // Amount to be paid
 	PayerID     common.ID         // Who is paying
 	Bills       []BillWithAmount  // which bill this is for

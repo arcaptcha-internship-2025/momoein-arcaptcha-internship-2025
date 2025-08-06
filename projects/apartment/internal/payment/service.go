@@ -17,6 +17,7 @@ var (
 	ErrOnPayTotalDebt  = errors.New("error on pay total debt")
 	ErrOnCallback      = errors.New("error on handle callbackI")
 	ErrInvalidCallback = errors.New("invalid callback")
+	ErrInvalidStatus   = errors.New("invalid status")
 )
 
 type service struct {
@@ -154,11 +155,20 @@ func (s *service) HandleCallback(
 		return fp.WrapErrors(ErrOnCallback, err)
 	}
 
-	if err := gateway.VerifyTransaction(ctx, data); err != nil {
+	tx, err := gateway.VerifyTransaction(ctx, data)
+	if err != nil {
 		return fp.WrapErrors(ErrOnCallback, ErrInvalidCallback, err)
 	}
 
-	// TODO
-	// change status if payment successful
+	status := domain.PaymentStatus(data["status"])
+	if !status.IsValid() {
+		return fp.WrapErrors(ErrOnCallback, ErrInvalidStatus)
+	}
+
+	err = s.repo.UpdateStatus(ctx, tx.PaymentIDs, status)
+	if err != nil {
+		return fp.WrapErrors(ErrOnCallback, err)
+	}
+
 	return nil
 }
