@@ -92,10 +92,14 @@ func MockGatewayVerify() http.Handler {
 		logPrefix := "mock-gateway-verify"
 
 		var req VerifyRequest
-		if err := BodyParse(r, &req); err != nil {
-			BadRequestError(w, r, "invalid request body")
-			log.Error(fmt.Sprintf("%s: BodyParse", logPrefix), zap.Error(err))
-			return
+		if r.URL.Query().Has("token") {
+			req.Token = r.URL.Query().Get("token")
+		} else {
+			if err := BodyParse(r, &req); err != nil {
+				BadRequestError(w, r, "invalid request body")
+				log.Error(fmt.Sprintf("%s: BodyParse", logPrefix), zap.Error(err))
+				return
+			}
 		}
 
 		resp := VerifyResponse{
