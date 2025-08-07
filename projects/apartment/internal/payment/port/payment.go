@@ -11,6 +11,7 @@ type Service interface {
 	PayBill(ctx context.Context, gateway domain.GatewayType, billID, userID common.ID, callBackURL string) (*domain.RedirectGateway, error)
 	PayTotalDebt(ctx context.Context, gateway domain.GatewayType, userID common.ID, callBackURL string) (*domain.RedirectGateway, error)
 	HandleCallback(ctx context.Context, gateway domain.GatewayType, data map[string][]string) error
+	SupportedGateways() []string
 }
 
 type Repo interface {

@@ -189,3 +189,11 @@ func (s *service) HandleCallback(
 	}
 	return nil
 }
+
+func (s *service) SupportedGateways() []string {
+	result := make([]string, 0)
+	for key := range s.gateways {
+		result = append(result, key.String())
+	}
+	return result
+}

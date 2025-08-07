@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/middleware"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
@@ -26,6 +27,7 @@ func RegisterAPI(r *router.Router, app app.App) {
 	usrSvcGtr := UserServiceGetter(app)
 	bilSvcGtr := BillServiceGetter(app)
 	aptSvcGtr := ApartmentServiceGetter(app)
+	paySvcGtr := PaymentServiceGetter(app)
 
 	r.Use(
 		middleware.SetRequestContext(app),
@@ -70,9 +72,13 @@ func RegisterAPI(r *router.Router, app app.App) {
 		})
 
 		r.Group("/payment", func(r *router.Router) {
-			r.Post("/pay-bill", PayUserBill())
-			r.Post("/pay-total-debt", PayTotalDebt())
-			r.Get("/callback", CallbackHandler())
+			callbackURL := path.Join(app.Config().BaseURL, "/api/v1/payment/callback")
+			chain := router.Chain{middleware.NewAuth(jwtSecret)}
+
+			r.Post("/pay-bill", chain.Then(PayUserBill(paySvcGtr, callbackURL)))
+			r.Post("/pay-total-debt", chain.Then(PayTotalDebt(paySvcGtr, callbackURL)))
+			r.Get("/callback", CallbackHandler(paySvcGtr))
+			r.Get("/supported-gateways", SupportedGateways(paySvcGtr))
 
 			r.Group("/mock-gateway", func(r *router.Router) {
 				r.Post("/pay", MockGatewayPay())
