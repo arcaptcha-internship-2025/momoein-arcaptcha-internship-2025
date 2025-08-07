@@ -13,6 +13,11 @@ definitions:
       message:
         type: string
     type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        type: string
+    type: object
   dto.SignInRequest:
     properties:
       email:
@@ -34,6 +39,36 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/auth/refresh-token:
+    get:
+      consumes:
+      - application/json
+      description: Refresh access token using a valid refresh token
+      parameters:
+      - description: Refresh Token Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Refresh JWT token
+      tags:
+      - Auth
   /api/v1/auth/sign-in:
     get:
       consumes:

@@ -135,13 +135,23 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service], cfg config.Auth
 	})
 }
 
+// RefreshTokenHandler
+//
+// @Summary      Refresh JWT token
+// @Description  Refresh access token using a valid refresh token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.RefreshTokenRequest  true  "Refresh Token Request"
+// @Success      200   {object}  dto.AuthResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/auth/refresh-token [get]
 func RefreshTokenHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
-		var req struct {
-			RefreshToken string `json:"refreshToken"`
-		}
+		var req dto.RefreshTokenRequest
 		if err := BodyParse(r, &req); err != nil {
 			BadRequestError(w, r, err.Error())
 			return
