@@ -81,3 +81,9 @@ type Transaction struct {
 	CallbackURL string            // URL to hit after payment (e.g. /payment/callback)
 	Metadata    map[string]string // Optional: custom key-value data for tracking
 }
+
+type RedirectGateway struct {
+	Method string
+	URL    string
+	Body   []byte
+}
