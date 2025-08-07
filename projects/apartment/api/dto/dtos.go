@@ -135,3 +135,16 @@ type VerifyResponse struct {
 	Code    int    `json:"code"`    //  ==0 success, !=0 failed
 	Message string `json:"message"` // descriptive message
 }
+
+type PayBillRequest struct {
+	BillID  string `json:"billID"`
+	Gateway string `json:"gateway"`
+}
+
+type PayTotalDebtRequest struct {
+	Gateway string `json:"gateway"`
+}
+
+type SupportedGatewaysResponse struct {
+	SupportedGateways []string `json:"supportedGateways"`
+}

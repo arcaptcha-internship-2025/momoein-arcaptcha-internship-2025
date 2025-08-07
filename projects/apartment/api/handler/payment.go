@@ -14,11 +14,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type PayBillRequest struct {
-	BillID  string `json:"billID"`
-	Gateway string `json:"gateway"`
-}
-
 // PayUserBill
 //
 // @Summary      Pay a bill
@@ -36,7 +31,7 @@ func PayUserBill(svcGtr ServiceGetter[paymentp.Service], callbackURL string) htt
 		log := appctx.Logger(r.Context())
 		logPrefix := "PayUserBill handler"
 
-		var req PayBillRequest
+		var req dto.PayBillRequest
 		if err := BodyParse(r, &req); err != nil {
 			log.Error(logPrefix, zap.Error(err))
 			BadRequestError(w, r, err.Error())
@@ -73,10 +68,6 @@ func PayUserBill(svcGtr ServiceGetter[paymentp.Service], callbackURL string) htt
 	})
 }
 
-type PayTotalDebtRequest struct {
-	Gateway string `json:"gateway"`
-}
-
 // PayTotalDebt
 //
 // @Summary      Pay total debt
@@ -94,7 +85,7 @@ func PayTotalDebt(svcGtr ServiceGetter[paymentp.Service], callbackURL string) ht
 		log := appctx.Logger(r.Context())
 		logPrefix := "PayTotalDebt handler"
 
-		var req PayTotalDebtRequest
+		var req dto.PayTotalDebtRequest
 		if err := BodyParse(r, &req); err != nil {
 			log.Error(logPrefix, zap.Error(err))
 			BadRequestError(w, r, err.Error())
@@ -181,10 +172,6 @@ func CallbackHandler(svcGtr ServiceGetter[paymentp.Service]) http.Handler {
 	})
 }
 
-type SupportedGatewaysResponse struct {
-	SupportedGateways []string `json:"supportedGateways"`
-}
-
 // SupportedGateways
 //
 // @Summary      List supported payment gateways
@@ -199,7 +186,7 @@ func SupportedGateways(svcGtr ServiceGetter[paymentp.Service]) http.Handler {
 		log := appctx.Logger(r.Context())
 		logPrefix := "CallbackHandler"
 		svc := svcGtr(r.Context())
-		resp := &SupportedGatewaysResponse{
+		resp := &dto.SupportedGatewaysResponse{
 			SupportedGateways: svc.SupportedGateways(),
 		}
 		if err := WriteJson(w, http.StatusOK, resp); err != nil {
