@@ -332,9 +332,367 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/bill": {
+            "get": {
+                "description": "Returns details of a bill by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bill"
+                ],
+                "summary": "Get bill details",
+                "parameters": [
+                    {
+                        "description": "Bill ID",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetBillRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Bill"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds a new bill to an apartment. Accepts multipart/form-data for image upload.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bill"
+                ],
+                "summary": "Add a new bill",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bill Name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bill Type",
+                        "name": "type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Bill Number",
+                        "name": "billNumber",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Amount",
+                        "name": "amount",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Due Date (YYYY-MM-DD)",
+                        "name": "dueDate",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Payment Status",
+                        "name": "status",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Paid At (YYYY-MM-DD)",
+                        "name": "paidAt",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Apartment ID",
+                        "name": "apartmentID",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Bill Image",
+                        "name": "image",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/bill/image": {
+            "get": {
+                "description": "Returns the image file for a bill",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "image/png"
+                ],
+                "tags": [
+                    "Bill"
+                ],
+                "summary": "Get bill image",
+                "parameters": [
+                    {
+                        "description": "Image ID",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetBillImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/bill-shares": {
+            "get": {
+                "description": "Returns the bill shares for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bill"
+                ],
+                "summary": "Get user's bill shares",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BillSharesResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/total-debt": {
+            "get": {
+                "description": "Returns the total debt for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bill"
+                ],
+                "summary": "Get user's total debt",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserTotalDebt"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "domain.Bill": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "apartmentID": {
+                    "type": "string"
+                },
+                "billNumber": {
+                    "type": "integer"
+                },
+                "dueDate": {
+                    "type": "string"
+                },
+                "hasImage": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "$ref": "#/definitions/domain.Image"
+                },
+                "imageID": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "paidAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "maybe to remove ??",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/internal_bill_domain.PaymentStatus"
+                        }
+                    ]
+                },
+                "type": {
+                    "$ref": "#/definitions/domain.BillType"
+                }
+            }
+        },
+        "domain.BillType": {
+            "type": "string",
+            "enum": [
+                "electricity",
+                "water",
+                "gas"
+            ],
+            "x-enum-varnames": [
+                "BillElectricity",
+                "BillWater",
+                "BillGas"
+            ]
+        },
+        "domain.Image": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.UserBillShare": {
+            "type": "object",
+            "properties": {
+                "balanceDue": {
+                    "type": "integer"
+                },
+                "billId": {
+                    "type": "string"
+                },
+                "billName": {
+                    "type": "string"
+                },
+                "memberCount": {
+                    "type": "integer"
+                },
+                "sharePerUser": {
+                    "type": "integer"
+                },
+                "totalAmount": {
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "userPaid": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.Apartment": {
             "type": "object",
             "properties": {
@@ -366,6 +724,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BillSharesResponse": {
+            "type": "object",
+            "properties": {
+                "billShares": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.UserBillShare"
+                    }
+                }
+            }
+        },
         "dto.Error": {
             "type": "object",
             "properties": {
@@ -373,6 +742,22 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GetBillImageRequest": {
+            "type": "object",
+            "properties": {
+                "imageID": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GetBillRequest": {
+            "type": "object",
+            "properties": {
+                "id": {
                     "type": "string"
                 }
             }
@@ -426,6 +811,27 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "dto.UserTotalDebt": {
+            "type": "object",
+            "properties": {
+                "totalDebt": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_bill_domain.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "unpaid",
+                "paid",
+                "overdue"
+            ],
+            "x-enum-varnames": [
+                "PaymentStatusUnpaid",
+                "PaymentStatusPaid",
+                "PaymentStatusOverdue"
+            ]
         }
     }
 }`

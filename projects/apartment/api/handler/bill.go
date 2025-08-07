@@ -31,6 +31,26 @@ const (
 const maxFileSize = 1 * MiB
 const dateLayout = "2006-01-02"
 
+// AddBill
+//
+// @Summary      Add a new bill
+// @Description  Adds a new bill to an apartment. Accepts multipart/form-data for image upload.
+// @Tags         Bill
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        name         formData  string  true   "Bill Name"
+// @Param        type         formData  string  true   "Bill Type"
+// @Param        billNumber   formData  integer true   "Bill Number"
+// @Param        amount       formData  integer true   "Amount"
+// @Param        dueDate      formData  string  true   "Due Date (YYYY-MM-DD)"
+// @Param        status       formData  string  true   "Payment Status"
+// @Param        paidAt       formData  string  false  "Paid At (YYYY-MM-DD)"
+// @Param        apartmentID  formData  string  true   "Apartment ID"
+// @Param        image        formData  file    false  "Bill Image"
+// @Success      201   {object}  map[string]interface{}
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/bill [post]
 func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -190,6 +210,19 @@ func handleImageUpload(r *http.Request, b *domain.Bill, log *zap.Logger, w http.
 	return nil
 }
 
+// GetBill
+//
+// @Summary      Get bill details
+// @Description  Returns details of a bill by ID
+// @Tags         Bill
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.GetBillRequest  true  "Bill ID"
+// @Success      200   {object}  domain.Bill
+// @Failure      400   {object}  dto.Error
+// @Failure      404   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/bill [get]
 func GetBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -220,6 +253,18 @@ func GetBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	})
 }
 
+// GetBillImage
+//
+// @Summary      Get bill image
+// @Description  Returns the image file for a bill
+// @Tags         Bill
+// @Accept       json
+// @Produce      image/png
+// @Param        body  body      dto.GetBillImageRequest  true  "Image ID"
+// @Success      200   {file}    file
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/bill/image [get]
 func GetBillImage(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -264,6 +309,15 @@ func GetBillImage(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	})
 }
 
+// GetUserTotalDept
+//
+// @Summary      Get user's total debt
+// @Description  Returns the total debt for the authenticated user
+// @Tags         Bill
+// @Produce      json
+// @Success      200   {object}  dto.UserTotalDebt
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/user/total-debt [get]
 func GetUserTotalDept(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -292,6 +346,15 @@ func GetUserTotalDept(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	})
 }
 
+// GetUserBillShares
+//
+// @Summary      Get user's bill shares
+// @Description  Returns the bill shares for the authenticated user
+// @Tags         Bill
+// @Produce      json
+// @Success      200   {object}  dto.BillSharesResponse
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/user/bill-shares [get]
 func GetUserBillShares(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())

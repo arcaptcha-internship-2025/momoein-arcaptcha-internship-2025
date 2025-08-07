@@ -1,4 +1,77 @@
 definitions:
+  domain.Bill:
+    properties:
+      amount:
+        type: integer
+      apartmentID:
+        type: string
+      billNumber:
+        type: integer
+      dueDate:
+        type: string
+      hasImage:
+        type: boolean
+      id:
+        type: string
+      image:
+        $ref: '#/definitions/domain.Image'
+      imageID:
+        type: string
+      name:
+        type: string
+      paidAt:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/internal_bill_domain.PaymentStatus'
+        description: maybe to remove ??
+      type:
+        $ref: '#/definitions/domain.BillType'
+    type: object
+  domain.BillType:
+    enum:
+    - electricity
+    - water
+    - gas
+    type: string
+    x-enum-varnames:
+    - BillElectricity
+    - BillWater
+    - BillGas
+  domain.Image:
+    properties:
+      content:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+      type:
+        type: string
+    type: object
+  domain.UserBillShare:
+    properties:
+      balanceDue:
+        type: integer
+      billId:
+        type: string
+      billName:
+        type: string
+      memberCount:
+        type: integer
+      sharePerUser:
+        type: integer
+      totalAmount:
+        type: integer
+      userId:
+        type: string
+      userPaid:
+        type: integer
+    type: object
   dto.Apartment:
     properties:
       address:
@@ -19,11 +92,28 @@ definitions:
       refreshToken:
         type: string
     type: object
+  dto.BillSharesResponse:
+    properties:
+      billShares:
+        items:
+          $ref: '#/definitions/domain.UserBillShare'
+        type: array
+    type: object
   dto.Error:
     properties:
       code:
         type: integer
       message:
+        type: string
+    type: object
+  dto.GetBillImageRequest:
+    properties:
+      imageID:
+        type: string
+    type: object
+  dto.GetBillRequest:
+    properties:
+      id:
         type: string
     type: object
   dto.InviteUserToApartmentRequest:
@@ -58,6 +148,21 @@ definitions:
       password:
         type: string
     type: object
+  dto.UserTotalDebt:
+    properties:
+      totalDebt:
+        type: integer
+    type: object
+  internal_bill_domain.PaymentStatus:
+    enum:
+    - unpaid
+    - paid
+    - overdue
+    type: string
+    x-enum-varnames:
+    - PaymentStatusUnpaid
+    - PaymentStatusPaid
+    - PaymentStatusOverdue
 info:
   contact: {}
 paths:
@@ -269,4 +374,170 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /api/v1/bill:
+    get:
+      consumes:
+      - application/json
+      description: Returns details of a bill by ID
+      parameters:
+      - description: Bill ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetBillRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Bill'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get bill details
+      tags:
+      - Bill
+    post:
+      consumes:
+      - multipart/form-data
+      description: Adds a new bill to an apartment. Accepts multipart/form-data for
+        image upload.
+      parameters:
+      - description: Bill Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Bill Type
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: Bill Number
+        in: formData
+        name: billNumber
+        required: true
+        type: integer
+      - description: Amount
+        in: formData
+        name: amount
+        required: true
+        type: integer
+      - description: Due Date (YYYY-MM-DD)
+        in: formData
+        name: dueDate
+        required: true
+        type: string
+      - description: Payment Status
+        in: formData
+        name: status
+        required: true
+        type: string
+      - description: Paid At (YYYY-MM-DD)
+        in: formData
+        name: paidAt
+        type: string
+      - description: Apartment ID
+        in: formData
+        name: apartmentID
+        required: true
+        type: string
+      - description: Bill Image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Add a new bill
+      tags:
+      - Bill
+  /api/v1/bill/image:
+    get:
+      consumes:
+      - application/json
+      description: Returns the image file for a bill
+      parameters:
+      - description: Image ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetBillImageRequest'
+      produces:
+      - image/png
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get bill image
+      tags:
+      - Bill
+  /api/v1/user/bill-shares:
+    get:
+      description: Returns the bill shares for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BillSharesResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get user's bill shares
+      tags:
+      - Bill
+  /api/v1/user/total-debt:
+    get:
+      description: Returns the total debt for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserTotalDebt'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get user's total debt
+      tags:
+      - Bill
 swagger: "2.0"
