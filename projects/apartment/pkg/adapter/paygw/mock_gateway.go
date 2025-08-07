@@ -12,10 +12,6 @@ import (
 	paymentp "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/port"
 )
 
-const (
-	PaymentIDsKey = "payment-ids"
-)
-
 var (
 	ErrMissingToken       = errors.New("missing token")
 	ErrPaymentNotComplete = errors.New("payment not complete")
@@ -38,7 +34,6 @@ func NewMockGateway(GatewayBaseURL string) (paymentp.Gateway, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &mockGateway{
 		gatewayBaseURL: gbu,
 	}, nil
@@ -53,17 +48,17 @@ func (g *mockGateway) CreateTransaction(
 	gatewayURL := *g.gatewayBaseURL
 	gatewayURL.Path = "/api/v1/payment/mock-gateway/pay"
 
-	if _, err := url.Parse(tx.CallbackURL); err != nil {
+	callbackURL, err := url.Parse(tx.CallbackURL)
+	if err != nil {
 		return nil, err
 	}
-	query := url.Values{}
-	for i := range tx.PaymentIDs {
-		query.Add(PaymentIDsKey, tx.PaymentIDs[i].String())
+	if _, err = url.ParseQuery(callbackURL.RawQuery); err != nil {
+		return nil, err
 	}
+
 	body := handler.PayRequest{
-		Amount:    tx.Amount,
-		ReturnURL: tx.CallbackURL,
-		Query:     query.Encode(),
+		Amount:      tx.Amount,
+		CallbackURL: callbackURL.String(),
 	}
 	bBody, err := json.Marshal(&body)
 	if err != nil {
@@ -78,7 +73,7 @@ func (g *mockGateway) CreateTransaction(
 
 func (g *mockGateway) VerifyTransaction(
 	ctx context.Context,
-	data map[string]string,
+	data map[string][]string,
 ) error {
 	token, ok := data["token"]
 	if !ok {
@@ -86,7 +81,7 @@ func (g *mockGateway) VerifyTransaction(
 	}
 	verifyURL := *g.gatewayBaseURL
 	verifyURL.Path = "/api/v1/payment/mock-gateway/verify"
-	verifyURL.RawQuery = url.Values{"token": {token}}.Encode()
+	verifyURL.RawQuery = url.Values{"token": token}.Encode()
 
 	resp, err := http.Get(verifyURL.String())
 	if err != nil {
