@@ -148,11 +148,13 @@ func (a *app) BillService() billPort.Service {
 }
 
 func (a *app) setupPaymentGateways() error {
+	gateways := make(map[paymentd.GatewayType]paymentp.Gateway)
 	mockGateway, err := paygw.NewMockGateway(a.cfg.BaseURL)
 	if err != nil {
 		return err
 	}
-	a.paymentGateways[paymentd.MockGateway] = mockGateway
+	gateways[paymentd.MockGateway] = mockGateway
+	a.paymentGateways = gateways
 	return nil
 }
 
