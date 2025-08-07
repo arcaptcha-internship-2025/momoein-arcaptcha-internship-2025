@@ -125,6 +125,45 @@ definitions:
     type: object
   dto.InviteUserToApartmentResponse:
     type: object
+  dto.PayBillRequest:
+    properties:
+      billID:
+        type: string
+      gateway:
+        type: string
+    type: object
+  dto.PayRequest:
+    properties:
+      amount:
+        type: integer
+      returnUrl:
+        type: string
+    type: object
+  dto.PayResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+      token:
+        type: string
+    type: object
+  dto.PayTotalDebtRequest:
+    properties:
+      gateway:
+        type: string
+    type: object
+  dto.RedirectGateway:
+    properties:
+      body:
+        items:
+          type: integer
+        type: array
+      method:
+        type: string
+      url:
+        type: string
+    type: object
   dto.RefreshTokenRequest:
     properties:
       refreshToken:
@@ -148,10 +187,31 @@ definitions:
       password:
         type: string
     type: object
+  dto.SupportedGatewaysResponse:
+    properties:
+      supportedGateways:
+        items:
+          type: string
+        type: array
+    type: object
   dto.UserTotalDebt:
     properties:
       totalDebt:
         type: integer
+    type: object
+  dto.VerifyRequest:
+    properties:
+      token:
+        type: string
+    type: object
+  dto.VerifyResponse:
+    properties:
+      code:
+        description: ==0 success, !=0 failed
+        type: integer
+      message:
+        description: descriptive message
+        type: string
     type: object
   internal_bill_domain.PaymentStatus:
     enum:
@@ -506,6 +566,191 @@ paths:
       summary: Get bill image
       tags:
       - Bill
+  /api/v1/payment/callback:
+    get:
+      consumes:
+      - application/json
+      description: Handles payment gateway callback and updates payment status
+      parameters:
+      - description: Gateway
+        in: query
+        name: gateway
+        required: true
+        type: string
+      - description: Payment Token
+        in: query
+        name: token
+        type: string
+      - collectionFormat: csv
+        description: Payment IDs
+        in: query
+        items:
+          type: string
+        name: payment-ids
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PayResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Payment callback
+      tags:
+      - Payment
+  /api/v1/payment/mock-gateway/pay:
+    post:
+      consumes:
+      - application/json
+      description: Simulates payment gateway pay endpoint for testing
+      parameters:
+      - description: Mock Payment Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PayRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PayResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Mock payment gateway pay
+      tags:
+      - Payment
+  /api/v1/payment/mock-gateway/verify:
+    get:
+      consumes:
+      - application/json
+      description: Simulates payment gateway verify endpoint for testing
+      parameters:
+      - description: Mock Payment Token
+        in: query
+        name: token
+        type: string
+      - description: Mock Verify Request
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/dto.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VerifyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Mock payment gateway verify
+      tags:
+      - Payment
+  /api/v1/payment/pay-bill:
+    post:
+      consumes:
+      - application/json
+      description: Initiates payment for a specific bill using a gateway
+      parameters:
+      - description: Bill Payment Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PayBillRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RedirectGateway'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Pay a bill
+      tags:
+      - Payment
+  /api/v1/payment/pay-total-debt:
+    post:
+      consumes:
+      - application/json
+      description: Initiates payment for all outstanding bills for the authenticated
+        user
+      parameters:
+      - description: Total Debt Payment Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PayTotalDebtRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RedirectGateway'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Pay total debt
+      tags:
+      - Payment
+  /api/v1/payment/supported-gateways:
+    get:
+      description: Returns a list of supported payment gateways
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SupportedGatewaysResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: List supported payment gateways
+      tags:
+      - Payment
   /api/v1/user/bill-shares:
     get:
       description: Returns the bill shares for the authenticated user

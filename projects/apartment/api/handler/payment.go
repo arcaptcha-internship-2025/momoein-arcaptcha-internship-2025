@@ -21,8 +21,8 @@ import (
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
-// @Param        body  body      PayBillRequest  true  "Bill Payment Request"
-// @Success      201   {object}  paymentd.RedirectGateway
+// @Param        body  body      dto.PayBillRequest  true  "Bill Payment Request"
+// @Success      201   {object}  dto.RedirectGateway
 // @Failure      400   {object}  dto.Error
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/payment/pay-bill [post]
@@ -75,8 +75,8 @@ func PayUserBill(svcGtr ServiceGetter[paymentp.Service], callbackURL string) htt
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
-// @Param        body  body      PayTotalDebtRequest  true  "Total Debt Payment Request"
-// @Success      201   {object}  paymentd.RedirectGateway
+// @Param        body  body      dto.PayTotalDebtRequest  true  "Total Debt Payment Request"
+// @Success      201   {object}  dto.RedirectGateway
 // @Failure      400   {object}  dto.Error
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/payment/pay-total-debt [post]
@@ -178,7 +178,7 @@ func CallbackHandler(svcGtr ServiceGetter[paymentp.Service]) http.Handler {
 // @Description  Returns a list of supported payment gateways
 // @Tags         Payment
 // @Produce      json
-// @Success      200   {object}  SupportedGatewaysResponse
+// @Success      200   {object}  dto.SupportedGatewaysResponse
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/payment/supported-gateways [get]
 func SupportedGateways(svcGtr ServiceGetter[paymentp.Service]) http.Handler {

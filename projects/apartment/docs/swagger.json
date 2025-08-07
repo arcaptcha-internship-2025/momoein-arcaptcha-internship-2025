@@ -517,6 +517,287 @@
                 }
             }
         },
+        "/api/v1/payment/callback": {
+            "get": {
+                "description": "Handles payment gateway callback and updates payment status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Payment callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gateway",
+                        "name": "gateway",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Payment Token",
+                        "name": "token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Payment IDs",
+                        "name": "payment-ids",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PayResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/payment/mock-gateway/pay": {
+            "post": {
+                "description": "Simulates payment gateway pay endpoint for testing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Mock payment gateway pay",
+                "parameters": [
+                    {
+                        "description": "Mock Payment Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PayRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PayResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/payment/mock-gateway/verify": {
+            "get": {
+                "description": "Simulates payment gateway verify endpoint for testing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Mock payment gateway verify",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Mock Payment Token",
+                        "name": "token",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Mock Verify Request",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/payment/pay-bill": {
+            "post": {
+                "description": "Initiates payment for a specific bill using a gateway",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Pay a bill",
+                "parameters": [
+                    {
+                        "description": "Bill Payment Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PayBillRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RedirectGateway"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/payment/pay-total-debt": {
+            "post": {
+                "description": "Initiates payment for all outstanding bills for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Pay total debt",
+                "parameters": [
+                    {
+                        "description": "Total Debt Payment Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PayTotalDebtRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RedirectGateway"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/payment/supported-gateways": {
+            "get": {
+                "description": "Returns a list of supported payment gateways",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "List supported payment gateways",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SupportedGatewaysResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/bill-shares": {
             "get": {
                 "description": "Returns the bill shares for the authenticated user",
@@ -765,6 +1046,67 @@
         "dto.InviteUserToApartmentResponse": {
             "type": "object"
         },
+        "dto.PayBillRequest": {
+            "type": "object",
+            "properties": {
+                "billID": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PayRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "returnUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PayResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PayTotalDebtRequest": {
+            "type": "object",
+            "properties": {
+                "gateway": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RedirectGateway": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "method": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.RefreshTokenRequest": {
             "type": "object",
             "properties": {
@@ -801,11 +1143,43 @@
                 }
             }
         },
+        "dto.SupportedGatewaysResponse": {
+            "type": "object",
+            "properties": {
+                "supportedGateways": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "dto.UserTotalDebt": {
             "type": "object",
             "properties": {
                 "totalDebt": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.VerifyRequest": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VerifyResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "==0 success, !=0 failed",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "descriptive message",
+                    "type": "string"
                 }
             }
         },

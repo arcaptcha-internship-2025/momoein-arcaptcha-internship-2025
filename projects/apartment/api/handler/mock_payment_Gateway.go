@@ -12,6 +12,19 @@ import (
 
 const mockToken = "mock-token"
 
+// MockGatewayPay
+//
+// @Summary      Mock payment gateway pay
+// @Description  Simulates payment gateway pay endpoint for testing
+// @Tags         Payment
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.PayRequest  true  "Mock Payment Request"
+// @Success      200   {object}  dto.PayResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      502   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/payment/mock-gateway/pay [post]
 func MockGatewayPay() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -66,6 +79,19 @@ func MockGatewayPay() http.Handler {
 	})
 }
 
+// MockGatewayVerify
+//
+// @Summary      Mock payment gateway verify
+// @Description  Simulates payment gateway verify endpoint for testing
+// @Tags         Payment
+// @Accept       json
+// @Produce      json
+// @Param        token  query    string  false "Mock Payment Token"
+// @Param        body   body     dto.VerifyRequest false "Mock Verify Request"
+// @Success      200   {object}  dto.VerifyResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/payment/mock-gateway/verify [get]
 func MockGatewayVerify() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
