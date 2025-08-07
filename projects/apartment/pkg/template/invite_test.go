@@ -9,7 +9,7 @@ import (
 func TestNewInvite(t *testing.T) {
 	data := InviteData{
 		Name:          "Alex",
-		EventName:     "Go Developers Meetup 2025",
+		ApartmentName: "Go Developers Meetup 2025",
 		Message:       "Join us for an evening of networking, talks, and pizza!",
 		RSVPLink:      "https://example.com/rsvp",
 		OrganizerName: "The Go Team",

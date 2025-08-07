@@ -3,6 +3,7 @@ package dto
 import (
 	"time"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 )
 
@@ -29,6 +30,10 @@ type SignUpRequest struct {
 type SignInRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refreshToken"`
 }
 
 type AuthResponse struct {
@@ -59,6 +64,11 @@ type InviteUserToApartmentRequest struct {
 	UserEmail   common.Email `json:"userEmail"`
 	ApartmentID common.ID    `json:"apartmentID"`
 }
+
+type UserTotalDebt struct {
+	TotalDebt int `json:"totalDebt"`
+}
+
 type InviteUserToApartmentResponse struct {
 }
 
@@ -86,8 +96,12 @@ type GetBillRequest struct {
 	ID common.ID `json:"id" form:"id"`
 }
 
-type GetBillImageRequest struct{
+type GetBillImageRequest struct {
 	ImageID common.ID `json:"imageID"`
+}
+
+type BillSharesResponse struct {
+	BillShares []domain.UserBillShare `json:"billShares"`
 }
 
 type RemoveBillRequest struct{}
@@ -100,4 +114,43 @@ type SendBillNotificationToUsersResponse struct {
 
 type CalculateUserBillRequest struct{}
 type CalculateUserBillResponse struct {
+}
+
+type PayRequest struct {
+	Amount      int64  `json:"amount"`
+	CallbackURL string `json:"returnUrl"`
+}
+
+type PayResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Token   string `json:"token,omitempty"`
+}
+
+type VerifyRequest struct {
+	Token string `json:"token"`
+}
+
+type VerifyResponse struct {
+	Code    int    `json:"code"`    //  ==0 success, !=0 failed
+	Message string `json:"message"` // descriptive message
+}
+
+type PayBillRequest struct {
+	BillID  string `json:"billID"`
+	Gateway string `json:"gateway"`
+}
+
+type PayTotalDebtRequest struct {
+	Gateway string `json:"gateway"`
+}
+
+type RedirectGateway struct {
+	Method string `json:"method"`
+	URL    string `json:"url"`
+	Body   []byte `json:"body"`
+}
+
+type SupportedGatewaysResponse struct {
+	SupportedGateways []string `json:"supportedGateways"`
 }

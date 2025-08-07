@@ -2,7 +2,6 @@ package apartment
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"testing"
 	"time"
@@ -58,10 +57,10 @@ func (m *MockRepo) AcceptInvite(
 
 type MockEmail struct {
 	mock.Mock
-	port.Email
+	port.EmailSender
 }
 
-func (m *MockEmail) Send(to []string, msg []byte) error {
+func (m *MockEmail) Send(to []string, msg *common.EmailMessage) error {
 	args := m.Called(to, msg)
 	return args.Error(0)
 }
@@ -70,6 +69,14 @@ var (
 	log = logger.NewConsoleZapLogger(logger.ModeDevelopment)
 	ctx = appctx.New(context.Background(), appctx.WithLogger(log))
 )
+
+func getAcceptURL() url.URL {
+	return url.URL{
+		Scheme: "http",
+		Host:   "127.0.0.1:8080",
+		Path:   "api/v1/apartment/invite/accept",
+	}
+}
 
 func TestCreateApartment_Success(t *testing.T) {
 	repo := new(MockRepo)
@@ -99,6 +106,7 @@ func TestInviteMember_Success(t *testing.T) {
 	adminID := common.NewRandomID()
 	apartmentID := common.NewRandomID()
 	userEmail := common.Email("test@example.com")
+	acceptURL := getAcceptURL()
 
 	apartmentObj := &domain.Apartment{
 		ID:      apartmentID,
@@ -116,7 +124,7 @@ func TestInviteMember_Success(t *testing.T) {
 	repo.On("InviteMember", ctx, apartmentID, mock.AnythingOfType("*domain.Invite")).Return(invite, nil)
 	email.On("Send", []string{userEmail.String()}, mock.Anything).Return(nil)
 
-	result, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail)
+	result, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail, acceptURL.String())
 
 	assert.NoError(t, err)
 	if assert.NotNil(t, result) {
@@ -133,6 +141,7 @@ func TestInviteMember_NotAdmin(t *testing.T) {
 	adminID := common.NewRandomID()
 	apartmentID := common.NewRandomID()
 	userEmail := common.Email("user@example.com")
+	acceptURL := getAcceptURL()
 
 	apt := &domain.Apartment{
 		ID:      apartmentID,
@@ -141,7 +150,7 @@ func TestInviteMember_NotAdmin(t *testing.T) {
 
 	repo.On("Get", ctx, &domain.ApartmentFilter{ID: apartmentID}).Return(apt, nil)
 
-	invite, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail)
+	invite, err := svc.InviteMember(ctx, adminID, apartmentID, userEmail, acceptURL.String())
 
 	assert.Error(t, err)
 	assert.Nil(t, invite)
@@ -162,13 +171,46 @@ func TestAcceptInvite_Success(t *testing.T) {
 	assert.NoError(t, err)
 	repo.AssertExpectations(t)
 }
+func TestAcceptInvite_InvalidToken(t *testing.T) {
+	repo := new(MockRepo)
+	email := new(MockEmail)
+	svc := NewService(repo, email)
 
-func TestXxx(t *testing.T) {
-	u := url.URL{
-		Scheme:   "http",
-		Host:     "127.0.0.1:8080",
-		Path:     "/api/v1/apartment/invite/accept",
-		RawQuery: fmt.Sprintf("%s=%s", "token", "xxx-xxx"),
-	}
-	fmt.Printf("%q\n", u.String())
+	token := "k3jd4kj9e-kdh4iu-ejf4ioj4k"
+
+	err := svc.AcceptInvite(ctx, token)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidToken)
+}
+
+func TestAcceptInvite_ExpiredToken(t *testing.T) {
+	repo := new(MockRepo)
+	email := new(MockEmail)
+	svc := NewService(repo, email)
+
+	token := common.NewRandomID().String()
+
+	repo.On("AcceptInvite", ctx, token).Return(ErrExpiredToken)
+
+	err := svc.AcceptInvite(ctx, token)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrExpiredToken)
+	repo.AssertExpectations(t)
+
+}
+
+func TestAcceptInvite_Unregistered(t *testing.T) {
+	repo := new(MockRepo)
+	email := new(MockEmail)
+	svc := NewService(repo, email)
+
+	token := common.NewRandomID().String()
+
+	repo.On("AcceptInvite", ctx, token).Return(ErrUnregisteredUser)
+
+	err := svc.AcceptInvite(ctx, token)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrUnregisteredUser)
+	repo.AssertExpectations(t)
 }

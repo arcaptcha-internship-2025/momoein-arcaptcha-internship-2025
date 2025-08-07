@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/domain"
@@ -26,14 +28,18 @@ var (
 	ErrInvalidToken      = errors.New("invalid token")
 	ErrOnAcceptInvite    = errors.New("error on accept invite")
 	ErrExpiredToken      = errors.New("expired token")
+	ErrOnSendEmail       = errors.New("failed to send email")
+	ErrOnParsURL         = errors.New("failed to parse url")
+	ErrOnGenerateMessage = errors.New("failed to generate message")
+	ErrInvalidEmail      = errors.New("invalid email")
 )
 
 type service struct {
 	repo port.Repo
-	mail port.Email
+	mail port.EmailSender
 }
 
-func NewService(r port.Repo, mail port.Email) port.Service {
+func NewService(r port.Repo, mail port.EmailSender) port.Service {
 	return &service{
 		repo: r,
 		mail: mail,
@@ -55,22 +61,19 @@ func (s *service) InviteMember(
 	ctx context.Context,
 	adminID, apartmentID common.ID,
 	userEmail common.Email,
+	acceptURL string,
 ) (
 	*domain.Invite, error,
 ) {
 	log := appctx.Logger(ctx)
 
+	if !userEmail.IsValid() {
+		log.Error("invalid email")
+		return nil, fp.WrapErrors(ErrOnInviteMember, ErrInvalidEmail)
+	}
+
 	if err := s.validateApartmentAdmin(ctx, apartmentID, adminID); err != nil {
-		// Unauthorized: current user is not the admin of this apartment
-		if errors.Is(err, ErrInvalidAdmin) {
-			log.Error("permission denied", zap.Error(err))
-			return nil, fp.WrapErrors(ErrOnInviteMember, ErrPermissionDenied, err)
-		}
-		if errors.Is(err, ErrNotFound) {
-			log.Error("apartment not found", zap.Error(err))
-			return nil, fp.WrapErrors(ErrOnInviteMember, err)
-		}
-		log.Error("apartment admin validate failed", zap.Error(err))
+		log.Error("apartment admin validation failed", zap.Error(err))
 		return nil, fp.WrapErrors(ErrOnInviteMember, err)
 	}
 
@@ -87,32 +90,24 @@ func (s *service) InviteMember(
 		return nil, fp.WrapErrors(ErrOnInviteMember, err)
 	}
 
-	// !! Dirty Code
-	log.Warn("Dirty Code")
-
-	inviteData := template.InviteData{
-		Name:          invite.Email.String(),
-		EventName:     "Apartment",
-		Message:       "Please use the following link to accept the invitation:",
-		RSVPLink:      fmt.Sprintf("http://127.0.0.1:8080/apartment/accepte/%s", invite.Token),
-		OrganizerName: "The ArCaptcha Team",
-	}
-	msg, err := template.NewInvite(inviteData)
+	to := []string{invite.Email.String()}
+	msg, err := s.generateInviteMessage(invite, acceptURL)
 	if err != nil {
-		log.Error("invite template", zap.Error(err))
 		return nil, fp.WrapErrors(ErrOnInviteMember, err)
 	}
-	log.Info("mail", zap.Any("mail service", s.mail))
-	err = s.mail.Send([]string{userEmail.String()}, msg)
+
+	err = s.mail.Send(to, msg)
 	if err != nil {
 		log.Error("send email", zap.Error(err))
-		return nil, fp.WrapErrors(ErrOnInviteMember, err)
+		return nil, fp.WrapErrors(ErrOnInviteMember, ErrOnSendEmail, err)
 	}
 
 	return invite, nil
 }
 
-func (s *service) validateApartmentAdmin(ctx context.Context, ApartmentID, adminID common.ID) error {
+func (s *service) validateApartmentAdmin(
+	ctx context.Context, ApartmentID, adminID common.ID,
+) error {
 	apartment, err := s.repo.Get(ctx, &domain.ApartmentFilter{ID: ApartmentID})
 	if err != nil {
 		return err
@@ -121,9 +116,39 @@ func (s *service) validateApartmentAdmin(ctx context.Context, ApartmentID, admin
 		return ErrNotFound
 	}
 	if apartment.AdminID != adminID {
-		return ErrInvalidAdmin
+		return fp.WrapErrors(ErrPermissionDenied, ErrInvalidAdmin)
 	}
 	return nil
+}
+
+func (s *service) generateInviteMessage(
+	invite *domain.Invite, acceptURL string,
+) (
+	*common.EmailMessage, error,
+) {
+	rsvpLink, err := url.Parse(acceptURL)
+	if err != nil {
+		return nil, fp.WrapErrors(ErrOnParsURL, err)
+	}
+	rsvpLink.RawQuery = fmt.Sprintf("%s=%s", "token", invite.Token)
+
+	inviteData := template.InviteData{
+		Name:          strings.Split(invite.Email.String(), "@")[0],
+		ApartmentName: "Apartment",
+		Message:       "Please use the following link to accept the invitation:",
+		RSVPLink:      rsvpLink.String(),
+		OrganizerName: "The ArCaptcha Team",
+	}
+	body, err := template.NewInvite(inviteData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &common.EmailMessage{
+		Subject: "apartment invite",
+		Body:    body,
+		IsHTML:  true,
+	}, nil
 }
 
 func (s *service) AcceptInvite(ctx context.Context, token string) error {

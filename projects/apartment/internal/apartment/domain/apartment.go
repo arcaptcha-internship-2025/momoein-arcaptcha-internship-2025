@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	billDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
@@ -57,6 +59,18 @@ type Apartment struct {
 }
 
 func (a *Apartment) Validate() error {
+	if strings.TrimSpace(a.Name) == "" {
+		return errors.New("apartment name is required")
+	}
+	if strings.TrimSpace(a.Address) == "" {
+		return errors.New("apartment address is required")
+	}
+	if a.UnitNumber <= 0 {
+		return errors.New("unit number must be a positive integer")
+	}
+	if a.AdminID == common.NilID {
+		return errors.New("admin ID is required")
+	}
 	return nil
 }
 

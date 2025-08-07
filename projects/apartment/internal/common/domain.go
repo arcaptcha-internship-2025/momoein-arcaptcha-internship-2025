@@ -14,6 +14,12 @@ func NewRandomID() ID {
 	return uuid.New()
 }
 
+func IDFromText(s string) ID {
+	id := NilID
+	_ = id.UnmarshalText([]byte(s))
+	return id
+}
+
 func ValidateID(id string) error {
 	return uuid.Validate(id)
 }
@@ -28,4 +34,10 @@ func (e Email) IsValid() bool {
 	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 	r := regexp.MustCompile(emailRegex)
 	return r.Match([]byte(e))
+}
+
+type EmailMessage struct {
+	Subject string
+	Body    []byte
+	IsHTML  bool
 }

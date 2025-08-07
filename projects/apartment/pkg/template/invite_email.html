@@ -1,51 +1,93 @@
 {{define "InviteEmail"}}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>You're Invited!</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333333;
         }
+
         .container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 30px;
             max-width: 600px;
-            margin: auto;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+            padding: 40px 30px;
+            line-height: 1.6;
         }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #007BFF;
+        }
+
         .btn {
             display: inline-block;
+            padding: 12px 24px;
             background-color: #007BFF;
-            color: #ffffff;
-            padding: 10px 20px;
-            margin-top: 20px;
+            color: #ffffff !important;
             text-decoration: none;
-            border-radius: 4px;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
         }
+
         .btn:hover {
             background-color: #0056b3;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #888888;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Hello {{.Name}},</h2>
-        <p>You are cordially invited to <strong>{{.EventName}}</strong>!</p>
 
+        <p>
+            You've been invited to join the apartment <span class="highlight">{{.ApartmentName}}</span>!
+        </p>
+
+        {{if .Message}}
         <p>{{.Message}}</p>
+        {{end}}
 
-        <a href="{{.RSVPLink}}" class="btn">RSVP Now</a>
+        <p>
+            To accept the invitation and join the apartment, please click the button below:
+        </p>
 
-        <p>If you have any questions, feel free to reply to this email.</p>
+        <p style="text-align: center;">
+            <a href="{{.RSVPLink}}" class="btn">Accept Invitation</a>
+        </p>
 
-        <p>Looking forward to seeing you!</p>
-        <p>– {{.OrganizerName}}</p>
+        <p>Looking forward to having you with us!</p>
+
+        <p>Best regards,<br><strong>{{.OrganizerName}}</strong></p>
+
+        <div class="footer">
+            This is an automated message. Please do not reply.
+        </div>
     </div>
 </body>
 </html>

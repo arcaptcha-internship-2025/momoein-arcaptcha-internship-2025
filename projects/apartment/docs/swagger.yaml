@@ -1,0 +1,788 @@
+definitions:
+  domain.Bill:
+    properties:
+      amount:
+        type: integer
+      apartmentID:
+        type: string
+      billNumber:
+        type: integer
+      dueDate:
+        type: string
+      hasImage:
+        type: boolean
+      id:
+        type: string
+      image:
+        $ref: '#/definitions/domain.Image'
+      imageID:
+        type: string
+      name:
+        type: string
+      paidAt:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/internal_bill_domain.PaymentStatus'
+        description: maybe to remove ??
+      type:
+        $ref: '#/definitions/domain.BillType'
+    type: object
+  domain.BillType:
+    enum:
+    - electricity
+    - water
+    - gas
+    type: string
+    x-enum-varnames:
+    - BillElectricity
+    - BillWater
+    - BillGas
+  domain.Image:
+    properties:
+      content:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+      type:
+        type: string
+    type: object
+  domain.UserBillShare:
+    properties:
+      balanceDue:
+        type: integer
+      billId:
+        type: string
+      billName:
+        type: string
+      memberCount:
+        type: integer
+      sharePerUser:
+        type: integer
+      totalAmount:
+        type: integer
+      userId:
+        type: string
+      userPaid:
+        type: integer
+    type: object
+  dto.Apartment:
+    properties:
+      address:
+        type: string
+      adminID:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      unitNumber:
+        type: integer
+    type: object
+  dto.AuthResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  dto.BillSharesResponse:
+    properties:
+      billShares:
+        items:
+          $ref: '#/definitions/domain.UserBillShare'
+        type: array
+    type: object
+  dto.Error:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  dto.GetBillImageRequest:
+    properties:
+      imageID:
+        type: string
+    type: object
+  dto.GetBillRequest:
+    properties:
+      id:
+        type: string
+    type: object
+  dto.InviteUserToApartmentRequest:
+    properties:
+      apartmentID:
+        type: string
+      userEmail:
+        type: string
+    type: object
+  dto.InviteUserToApartmentResponse:
+    type: object
+  dto.PayBillRequest:
+    properties:
+      billID:
+        type: string
+      gateway:
+        type: string
+    type: object
+  dto.PayRequest:
+    properties:
+      amount:
+        type: integer
+      returnUrl:
+        type: string
+    type: object
+  dto.PayResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+      token:
+        type: string
+    type: object
+  dto.PayTotalDebtRequest:
+    properties:
+      gateway:
+        type: string
+    type: object
+  dto.RedirectGateway:
+    properties:
+      body:
+        items:
+          type: integer
+        type: array
+      method:
+        type: string
+      url:
+        type: string
+    type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        type: string
+    type: object
+  dto.SignInRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.SignUpRequest:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.SupportedGatewaysResponse:
+    properties:
+      supportedGateways:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.UserTotalDebt:
+    properties:
+      totalDebt:
+        type: integer
+    type: object
+  dto.VerifyRequest:
+    properties:
+      token:
+        type: string
+    type: object
+  dto.VerifyResponse:
+    properties:
+      code:
+        description: ==0 success, !=0 failed
+        type: integer
+      message:
+        description: descriptive message
+        type: string
+    type: object
+  internal_bill_domain.PaymentStatus:
+    enum:
+    - unpaid
+    - paid
+    - overdue
+    type: string
+    x-enum-varnames:
+    - PaymentStatusUnpaid
+    - PaymentStatusPaid
+    - PaymentStatusOverdue
+info:
+  contact: {}
+paths:
+  /api/v1/apartment:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new apartment and assigns the current user as admin
+      parameters:
+      - description: Apartment Info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Apartment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.Apartment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Create a new apartment
+      tags:
+      - Apartment
+  /api/v1/apartment/invite:
+    post:
+      consumes:
+      - application/json
+      description: Sends an invitation to a user to join an apartment
+      parameters:
+      - description: Invite Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.InviteUserToApartmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.InviteUserToApartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Invite user to apartment
+      tags:
+      - Apartment
+  /api/v1/apartment/invite/accept:
+    get:
+      consumes:
+      - application/json
+      description: Accepts an invitation to join an apartment using a token
+      parameters:
+      - description: Invitation Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Accept apartment invitation
+      tags:
+      - Apartment
+  /api/v1/apartment/members:
+    get:
+      description: Returns a list of users in the apartment (not implemented)
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: List apartment members
+      tags:
+      - Apartment
+  /api/v1/auth/refresh-token:
+    get:
+      consumes:
+      - application/json
+      description: Refresh access token using a valid refresh token
+      parameters:
+      - description: Refresh Token Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Refresh JWT token
+      tags:
+      - Auth
+  /api/v1/auth/sign-in:
+    get:
+      consumes:
+      - application/json
+      description: Authenticates user and returns JWT tokens
+      parameters:
+      - description: Sign In Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: User login
+      tags:
+      - Auth
+  /api/v1/auth/sign-up:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and returns JWT tokens
+      parameters:
+      - description: Sign Up Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Register a new user
+      tags:
+      - Auth
+  /api/v1/bill:
+    get:
+      consumes:
+      - application/json
+      description: Returns details of a bill by ID
+      parameters:
+      - description: Bill ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetBillRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Bill'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get bill details
+      tags:
+      - Bill
+    post:
+      consumes:
+      - multipart/form-data
+      description: Adds a new bill to an apartment. Accepts multipart/form-data for
+        image upload.
+      parameters:
+      - description: Bill Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Bill Type
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: Bill Number
+        in: formData
+        name: billNumber
+        required: true
+        type: integer
+      - description: Amount
+        in: formData
+        name: amount
+        required: true
+        type: integer
+      - description: Due Date (YYYY-MM-DD)
+        in: formData
+        name: dueDate
+        required: true
+        type: string
+      - description: Payment Status
+        in: formData
+        name: status
+        required: true
+        type: string
+      - description: Paid At (YYYY-MM-DD)
+        in: formData
+        name: paidAt
+        type: string
+      - description: Apartment ID
+        in: formData
+        name: apartmentID
+        required: true
+        type: string
+      - description: Bill Image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Add a new bill
+      tags:
+      - Bill
+  /api/v1/bill/image:
+    get:
+      consumes:
+      - application/json
+      description: Returns the image file for a bill
+      parameters:
+      - description: Image ID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetBillImageRequest'
+      produces:
+      - image/png
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get bill image
+      tags:
+      - Bill
+  /api/v1/payment/callback:
+    get:
+      consumes:
+      - application/json
+      description: Handles payment gateway callback and updates payment status
+      parameters:
+      - description: Gateway
+        in: query
+        name: gateway
+        required: true
+        type: string
+      - description: Payment Token
+        in: query
+        name: token
+        type: string
+      - collectionFormat: csv
+        description: Payment IDs
+        in: query
+        items:
+          type: string
+        name: payment-ids
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PayResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Payment callback
+      tags:
+      - Payment
+  /api/v1/payment/mock-gateway/pay:
+    post:
+      consumes:
+      - application/json
+      description: Simulates payment gateway pay endpoint for testing
+      parameters:
+      - description: Mock Payment Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PayRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PayResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Mock payment gateway pay
+      tags:
+      - Payment
+  /api/v1/payment/mock-gateway/verify:
+    get:
+      consumes:
+      - application/json
+      description: Simulates payment gateway verify endpoint for testing
+      parameters:
+      - description: Mock Payment Token
+        in: query
+        name: token
+        type: string
+      - description: Mock Verify Request
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/dto.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VerifyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Mock payment gateway verify
+      tags:
+      - Payment
+  /api/v1/payment/pay-bill:
+    post:
+      consumes:
+      - application/json
+      description: Initiates payment for a specific bill using a gateway
+      parameters:
+      - description: Bill Payment Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PayBillRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RedirectGateway'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Pay a bill
+      tags:
+      - Payment
+  /api/v1/payment/pay-total-debt:
+    post:
+      consumes:
+      - application/json
+      description: Initiates payment for all outstanding bills for the authenticated
+        user
+      parameters:
+      - description: Total Debt Payment Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PayTotalDebtRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.RedirectGateway'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Pay total debt
+      tags:
+      - Payment
+  /api/v1/payment/supported-gateways:
+    get:
+      description: Returns a list of supported payment gateways
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SupportedGatewaysResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: List supported payment gateways
+      tags:
+      - Payment
+  /api/v1/user/bill-shares:
+    get:
+      description: Returns the bill shares for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BillSharesResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get user's bill shares
+      tags:
+      - Bill
+  /api/v1/user/total-debt:
+    get:
+      description: Returns the total debt for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserTotalDebt'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Get user's total debt
+      tags:
+      - Bill
+swagger: "2.0"

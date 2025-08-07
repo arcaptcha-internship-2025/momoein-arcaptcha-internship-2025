@@ -15,8 +15,21 @@ type billObjectStorage struct {
 
 const BillImageBucket = "bill-image-bucket"
 
-func NewBillObjectStorage(c *minio.Client) port.ObjectStorage {
-	return &billObjectStorage{client: c}
+func MustNewBillObjectStorage(c *minio.Client) port.ObjectStorage {
+	storage, err := NewBillObjectStorage(c)
+	if err != nil {
+		panic(err)
+	}
+	return storage
+}
+
+func NewBillObjectStorage(c *minio.Client) (port.ObjectStorage, error) {
+	storage := &billObjectStorage{client: c}
+	err := storage.CreateBucket(context.Background(), BillImageBucket)
+	if err != nil {
+		return nil, err
+	}
+	return storage, nil
 }
 
 func (s *billObjectStorage) CreateBucket(ctx context.Context, bucketName string) error {

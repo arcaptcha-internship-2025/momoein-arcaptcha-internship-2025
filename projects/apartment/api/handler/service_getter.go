@@ -6,6 +6,7 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
 	apartmentPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
 	billPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
+	paymentp "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/port"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 )
 
@@ -26,5 +27,11 @@ func ApartmentServiceGetter(a app.App) ServiceGetter[apartmentPort.Service] {
 func BillServiceGetter(a app.App) ServiceGetter[billPort.Service] {
 	return func(ctx context.Context) billPort.Service {
 		return a.BillService()
+	}
+}
+
+func PaymentServiceGetter(app app.App) ServiceGetter[paymentp.Service] {
+	return func(ctx context.Context) paymentp.Service {
+		return app.PaymentService()
 	}
 }

@@ -3,6 +3,8 @@ package bill
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -33,6 +35,16 @@ func (m *MockRepo) Create(ctx context.Context, b *domain.Bill) (*domain.Bill, er
 func (m *MockRepo) Read(ctx context.Context, f *domain.BillFilter) (*domain.Bill, error) {
 	args := m.Called(ctx, f)
 	return args.Get(0).(*domain.Bill), args.Error(1)
+}
+
+func (m *MockRepo) GetUserBillShares(ctx context.Context, userID common.ID) ([]domain.UserBillShare, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).([]domain.UserBillShare), args.Error(1)
+}
+
+func (m *MockRepo) GetUserTotalDebt(ctx context.Context, userID common.ID) (int, error) {
+	args := m.Called(ctx, userID)
+	return args.Int(0), args.Error(1)
 }
 
 type MockStorage struct {
@@ -221,4 +233,48 @@ func TestGetBill_RepoError(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), ErrOnGetBill.Error())
 	repo.AssertExpectations(t)
+}
+
+func TestGetBillImage_Success(t *testing.T) {
+	repo := new(MockRepo)
+	storage := new(MockStorage)
+	svc := NewService(repo, storage)
+
+	imageID := common.NewRandomID()
+	expectedPath := filepath.Join(os.TempDir(), imageID.String())
+
+	storage.
+		On("FGet", mock.Anything, imageID.String(), expectedPath).
+		Return(nil)
+
+	path, err := svc.GetBillImage(context.Background(), imageID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPath, path)
+	storage.AssertExpectations(t)
+}
+
+func TestGetBillImage_ObjectStorageError(t *testing.T) {
+	repo := new(MockRepo)
+	storage := new(MockStorage)
+	svc := NewService(repo, storage)
+
+	imageID := common.NewRandomID()
+	expectedPath := filepath.Join(os.TempDir(), imageID.String())
+	storageErr := errors.New("storage unavailable")
+
+	storage.
+		On("FGet", mock.Anything, imageID.String(), expectedPath).
+		Return(storageErr)
+
+	path, err := svc.GetBillImage(context.Background(), imageID)
+
+	assert.Error(t, err)
+	assert.Empty(t, path)
+	assert.Contains(t, err.Error(), "storage unavailable")
+	storage.AssertExpectations(t)
+}
+
+func TestGetBillImage_NotFound(t *testing.T) {
+	// TODO
 }

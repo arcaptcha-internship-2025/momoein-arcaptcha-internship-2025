@@ -23,15 +23,21 @@ var (
 	ErrInternalServer = errors.New("internal server error")
 )
 
+// SignUpHandler
+//
+// @Summary      Register a new user
+// @Description  Creates a new user account and returns JWT tokens
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.SignUpRequest  true  "Sign Up Request"
+// @Success      201   {object}  dto.AuthResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/auth/sign-up [post]
 func getSignUpHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
-
-		// returnTo := r.URL.Query().Get("return_to")
-		// if returnTo == "" {
-		// 	returnTo = "/" // fallback
-		// }
-		// http.Redirect(w, r, returnTo, http.StatusFound)
 
 		var req dto.SignUpRequest
 		if err := BodyParse(r, &req); err != nil {
@@ -70,6 +76,20 @@ func getSignUpHandler(svcGetter ServiceGetter[userPort.Service], cfg config.Auth
 	})
 }
 
+// SignInHandler
+//
+// @Summary      User login
+// @Description  Authenticates user and returns JWT tokens
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.SignInRequest  true  "Sign In Request"
+// @Success      201   {object}  dto.AuthResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      401   {object}  dto.Error
+// @Failure      404   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/auth/sign-in [get]
 func getSignInHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -111,6 +131,54 @@ func getSignInHandler(svcGetter ServiceGetter[userPort.Service], cfg config.Auth
 		if err = WriteJson(w, http.StatusCreated, authResp); err != nil {
 			log.Error("failed to write response", zap.Error(err))
 			Error(w, r, http.StatusInternalServerError, "InternalServerError", err.Error())
+		}
+	})
+}
+
+// RefreshTokenHandler
+//
+// @Summary      Refresh JWT token
+// @Description  Refresh access token using a valid refresh token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.RefreshTokenRequest  true  "Refresh Token Request"
+// @Success      200   {object}  dto.AuthResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/auth/refresh-token [get]
+func RefreshTokenHandler(svcGetter ServiceGetter[userPort.Service], cfg config.AuthConfig) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := appctx.Logger(r.Context())
+
+		var req dto.RefreshTokenRequest
+		if err := BodyParse(r, &req); err != nil {
+			BadRequestError(w, r, err.Error())
+			return
+		}
+
+		claims, err := appjwt.ParseToken(req.RefreshToken, []byte(cfg.JWTSecret))
+		if err != nil {
+			log.Error("refresh token", zap.Error(err))
+			BadRequestError(w, r, err.Error())
+			return
+		}
+
+		accessToken, err := createJWTToken(cfg.JWTSecret, claims.UserID, claims.UserEMail, cfg.AccessExpiry)
+		if err != nil {
+			log.Error("refresh token", zap.Error(err))
+			InternalServerError(w, r)
+			return
+		}
+
+		SetTokenCookie(w, cfg, accessToken, req.RefreshToken)
+		err = WriteJson(w, http.StatusOK, &dto.AuthResponse{
+			AccessToken:  accessToken,
+			RefreshToken: req.RefreshToken,
+		})
+		if err != nil {
+			log.Error("refresh token", zap.Error(err))
+			InternalServerError(w, r)
 		}
 	})
 }

@@ -93,8 +93,8 @@ CREATE TABLE IF NOT EXISTS bills (
     bill_type bill_type NOT NULL,
     bill_id INTEGER UNIQUE NOT NULL,
     amount INTEGER NOT NULL,
-    status bill_status_type NOT NULL DEFAULT 'unpaid',
-    paid_at TIMESTAMPTZ,
+    -- status bill_status_type NOT NULL DEFAULT 'unpaid', -- ??
+    -- paid_at TIMESTAMPTZ, -- ??
     due_date DATE NOT NULL,
     image_id UUID,
     apartment_id UUID NOT NULL,
@@ -109,7 +109,15 @@ CREATE TABLE IF NOT EXISTS payments (
     bill_id UUID NOT NULL,
     payer_id UUID NOT NULL,
     amount INTEGER NOT NULL,
-    payment_date TIMESTAMPTZ NOT NULL DEFAULT now(),
+    paid_at TIMESTAMPTZ,
+    -- values: pending, paid, failed, cancelled
+    status TEXT NOT NULL DEFAULT 'pending',
+    -- e.g., 'zarinpal', 'stripe', etc.
+    gateway TEXT NOT NULL,
+    -- ID returned by the payment gateway
+    transaction_id TEXT,
+    -- optional: raw data from gateway callback for auditing
+    callback_data JSONB,
     FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (payer_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 );

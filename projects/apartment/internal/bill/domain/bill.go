@@ -156,6 +156,17 @@ func (b Bill) IsPaid() bool {
 	return b.Status == PaymentStatusPaid && !b.PaidAt.IsZero()
 }
 
+type UserBillShare struct {
+	UserID       common.ID `json:"userId"`
+	BillID       common.ID `json:"billId"`
+	BillName     string    `json:"billName"`
+	TotalAmount  int       `json:"totalAmount"`
+	MemberCount  int       `json:"memberCount"`
+	SharePerUser int       `json:"sharePerUser"`
+	UserPaid     int       `json:"userPaid"`
+	BalanceDue   int       `json:"balanceDue"`
+}
+
 type PaymentStatus string
 
 const (

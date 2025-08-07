@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"net/url"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment"
@@ -14,6 +13,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// AddApartment
+//
+// @Summary      Create a new apartment
+// @Description  Adds a new apartment and assigns the current user as admin
+// @Tags         Apartment
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.Apartment  true  "Apartment Info"
+// @Success      201   {object}  dto.Apartment
+// @Failure      400   {object}  dto.Error
+// @Failure      401   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/apartment [post]
 func AddApartment(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -48,7 +60,19 @@ func AddApartment(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
 	})
 }
 
-func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
+// InviteApartmentMember
+//
+// @Summary      Invite user to apartment
+// @Description  Sends an invitation to a user to join an apartment
+// @Tags         Apartment
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.InviteUserToApartmentRequest  true  "Invite Request"
+// @Success      200   {object}  dto.InviteUserToApartmentResponse
+// @Failure      400   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/apartment/invite [post]
+func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service], acceptURL string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 
@@ -73,7 +97,7 @@ func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service]) http.
 			return
 		}
 
-		member, err := svc.InviteMember(r.Context(), adminId, req.ApartmentID, common.Email(req.UserEmail))
+		member, err := svc.InviteMember(r.Context(), adminId, req.ApartmentID, common.Email(req.UserEmail), acceptURL)
 		if err != nil {
 			log.Error("invite member", zap.Error(err))
 			Error(w, r, http.StatusInternalServerError, "InternalServerError")
@@ -89,6 +113,19 @@ func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service]) http.
 
 const InviteTokenKey string = "token"
 
+// AcceptApartmentInvite
+//
+// @Summary      Accept apartment invitation
+// @Description  Accepts an invitation to join an apartment using a token
+// @Tags         Apartment
+// @Accept       json
+// @Produce      json
+// @Param        token  query    string  true  "Invitation Token"
+// @Success      202   {string}  string  "Accepted"
+// @Failure      400   {object}  dto.Error
+// @Failure      401   {object}  dto.Error
+// @Failure      500   {object}  dto.Error
+// @Router       /api/v1/apartment/invite/accept [get]
 func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
@@ -106,9 +143,8 @@ func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.
 			switch {
 			case errors.Is(err, apartment.ErrInvalidToken):
 				Error(w, r, http.StatusBadRequest)
-			case errors.Is(err, apartment.ErrUnregisteredUser): // ??
-				redirectURL := "/sign-up?return_to=" + url.QueryEscape(r.URL.String())
-				http.Redirect(w, r, redirectURL, http.StatusFound)
+			case errors.Is(err, apartment.ErrUnregisteredUser):
+				Error(w, r, http.StatusUnauthorized, "unregistered user")
 			default:
 				log.Error("accept invite", zap.Error(err))
 				Error(w, r, http.StatusInternalServerError)
@@ -120,6 +156,14 @@ func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.
 	})
 }
 
+// ApartmentMembers
+//
+// @Summary      List apartment members
+// @Description  Returns a list of users in the apartment (not implemented)
+// @Tags         Apartment
+// @Produce      json
+// @Failure      501   {object}  dto.Error
+// @Router       /api/v1/apartment/members [get]
 func ApartmentMembers(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		Error(w, r, http.StatusNotImplemented, "Not Implemented")

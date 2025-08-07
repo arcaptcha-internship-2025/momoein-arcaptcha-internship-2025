@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path"
 	"slices"
+	"strings"
 )
 
 type Router struct {
@@ -55,8 +56,18 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
 }
 
 func (r *Router) Method(method, pattern string, h http.Handler) {
-	fullPattern := path.Clean(r.prefix + pattern)
-	r.Handle(fmt.Sprintf("%s %s", method, fullPattern), h)
+	fullPattern := path.Join(r.prefix, pattern)
+	// Ensure trailing slash is preserved for patterns ending with '/'
+	// because net/http ServeMux treats "/path" and "/path/" differently.
+	n := len(pattern)
+	if n > 1 && pattern[n-1] == '/' {
+		fullPattern += "/"
+	}
+	method = strings.TrimSpace(method)
+	if method != "" {
+		fullPattern = fmt.Sprintf("%s %s", method, fullPattern)
+	}
+	r.Handle(fullPattern, h)
 }
 
 func (r *Router) Connect(pattern string, h http.Handler) {

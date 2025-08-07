@@ -3,22 +3,18 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/middleware"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
+	_ "github.com/arcaptcha-internship-2025/momoein-apartment/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func Run(app app.App) error {
 	r := router.NewRouter()
-	r.Use(
-		middleware.SetRequestContext(app),
-		middleware.LogRequest(),
-	)
-	r.Get("/", getRootHandler())
-
-	api := r.Group("/api/v1", nil)
-	RegisterAPI(api, app)
+	RegisterAPI(r, app)
 
 	addr := fmt.Sprintf(":%d", app.Config().HTTP.Port)
 	app.Logger().Info("listen on " + addr)
@@ -26,25 +22,69 @@ func Run(app app.App) error {
 }
 
 func RegisterAPI(r *router.Router, app app.App) {
-	secret := []byte(app.Config().Auth.JWTSecret)
+	jwtSecret := []byte(app.Config().Auth.JWTSecret)
 
-	r.Group("/auth", func(r *router.Router) {
-		r.Post("/sign-up", getSignUpHandler(UserServiceGetter(app), app.Config().Auth))
-		r.Get("/sign-in", getSignInHandler(UserServiceGetter(app), app.Config().Auth))
-	})
+	usrSvcGtr := UserServiceGetter(app)
+	bilSvcGtr := BillServiceGetter(app)
+	aptSvcGtr := ApartmentServiceGetter(app)
+	paySvcGtr := PaymentServiceGetter(app)
 
-	r.Group("/apartment", func(r *router.Router) {
-		r.Use(middleware.NewAuth(secret))
+	r.Use(
+		middleware.SetRequestContext(app),
+		middleware.LogRequest(),
+	)
+	r.Get("/", getRootHandler())
 
-		svcGetter := ApartmentServiceGetter(app)
-		r.Post("/", AddApartment(svcGetter))
-		r.Post("/invite", InviteApartmentMember(svcGetter))
-		r.Get("/invite/accept", AcceptApartmentInvite(svcGetter))
+	r.Group("/api/v1", func(r *router.Router) {
 
-		bilSvcGtr := BillServiceGetter(app)
-		r.Post("/bill", AddBill(bilSvcGtr))
-		r.Get("/bill", GetBill(bilSvcGtr))
-		r.Get("/bill/image", GetBillImage(bilSvcGtr))
+		r.Group("/docs", func(r *router.Router) {
+			r.Get("/swagger/", httpSwagger.Handler())
+		})
+
+		r.Group("/auth", func(r *router.Router) {
+			r.Post("/sign-up", getSignUpHandler(usrSvcGtr, app.Config().Auth))
+			r.Get("/sign-in", getSignInHandler(usrSvcGtr, app.Config().Auth))
+			r.Get("/refresh-token", RefreshTokenHandler(usrSvcGtr, app.Config().Auth))
+		})
+
+		r.Group("/apartment", func(r *router.Router) {
+			r.Use(middleware.NewAuth(jwtSecret))
+			acceptURL := app.Config().BaseURL + "/api/v1/apartment/invite/accept"
+
+			r.Post("/", AddApartment(aptSvcGtr))
+			r.Post("/invite", InviteApartmentMember(aptSvcGtr, acceptURL))
+			r.Get("/invite/accept", AcceptApartmentInvite(aptSvcGtr))
+		})
+
+		r.Group("/bill", func(r *router.Router) {
+			r.Use(middleware.NewAuth(jwtSecret))
+
+			r.Post("/", AddBill(bilSvcGtr))
+			r.Get("/", GetBill(bilSvcGtr))
+			r.Get("/image", GetBillImage(bilSvcGtr))
+		})
+
+		r.Group("/user", func(r *router.Router) {
+			r.Use(middleware.NewAuth(jwtSecret))
+
+			r.Get("/total-debt", GetUserTotalDept(bilSvcGtr))
+			r.Get("/bill-shares", GetUserBillShares(bilSvcGtr))
+		})
+
+		r.Group("/payment", func(r *router.Router) {
+			callbackURL := path.Join(app.Config().BaseURL, "/api/v1/payment/callback")
+			chain := router.Chain{middleware.NewAuth(jwtSecret)}
+
+			r.Post("/pay-bill", chain.Then(PayUserBill(paySvcGtr, callbackURL)))
+			r.Post("/pay-total-debt", chain.Then(PayTotalDebt(paySvcGtr, callbackURL)))
+			r.Get("/callback", CallbackHandler(paySvcGtr))
+			r.Get("/supported-gateways", SupportedGateways(paySvcGtr))
+
+			r.Group("/mock-gateway", func(r *router.Router) {
+				r.Post("/pay", MockGatewayPay())
+				r.Get("/verify", MockGatewayVerify())
+			})
+		})
 	})
 }
 

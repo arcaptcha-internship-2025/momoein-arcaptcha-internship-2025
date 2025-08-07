@@ -4,6 +4,7 @@ import (
 	apartmentDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/domain"
 	billDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
+	paymentd "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/domain"
 	userDomain "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/domain"
 )
 
@@ -36,5 +37,13 @@ func ApartmentDomainToDTO(a *apartmentDomain.Apartment) *Apartment {
 		Address:    a.Address,
 		UnitNumber: a.UnitNumber,
 		AdminID:    a.AdminID.String(),
+	}
+}
+
+func RedirectGatewayDomainToDTO(rg *paymentd.RedirectGateway) *RedirectGateway {
+	return &RedirectGateway{
+		Method: rg.Method,
+		URL:    rg.URL,
+		Body:   rg.Body,
 	}
 }
