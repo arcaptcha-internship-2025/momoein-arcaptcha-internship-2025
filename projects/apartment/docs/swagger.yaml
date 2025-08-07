@@ -1,4 +1,17 @@
 definitions:
+  dto.Apartment:
+    properties:
+      address:
+        type: string
+      adminID:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      unitNumber:
+        type: integer
+    type: object
   dto.AuthResponse:
     properties:
       accessToken:
@@ -12,6 +25,15 @@ definitions:
         type: integer
       message:
         type: string
+    type: object
+  dto.InviteUserToApartmentRequest:
+    properties:
+      apartmentID:
+        type: string
+      userEmail:
+        type: string
+    type: object
+  dto.InviteUserToApartmentResponse:
     type: object
   dto.RefreshTokenRequest:
     properties:
@@ -39,6 +61,116 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/apartment:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new apartment and assigns the current user as admin
+      parameters:
+      - description: Apartment Info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Apartment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.Apartment'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Create a new apartment
+      tags:
+      - Apartment
+  /api/v1/apartment/invite:
+    post:
+      consumes:
+      - application/json
+      description: Sends an invitation to a user to join an apartment
+      parameters:
+      - description: Invite Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.InviteUserToApartmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.InviteUserToApartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Invite user to apartment
+      tags:
+      - Apartment
+  /api/v1/apartment/invite/accept:
+    get:
+      consumes:
+      - application/json
+      description: Accepts an invitation to join an apartment using a token
+      parameters:
+      - description: Invitation Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: Accept apartment invitation
+      tags:
+      - Apartment
+  /api/v1/apartment/members:
+    get:
+      description: Returns a list of users in the apartment (not implemented)
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.Error'
+      summary: List apartment members
+      tags:
+      - Apartment
   /api/v1/auth/refresh-token:
     get:
       consumes:
