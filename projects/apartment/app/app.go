@@ -10,9 +10,13 @@ import (
 	apartmentPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/apartment/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill"
 	billPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/bill/port"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment"
+	paymentd "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/domain"
+	paymentp "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/user"
 	userPort "github.com/arcaptcha-internship-2025/momoein-apartment/internal/user/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/email"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/paygw"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/adapter/storage"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/logger"
@@ -29,6 +33,8 @@ type app struct {
 	apartmentService apartmentPort.Service
 	apartmentMail    apartmentPort.EmailSender
 	billService      billPort.Service
+	paymentService   paymentp.Service
+	paymentGateways  map[paymentd.GatewayType]paymentp.Gateway
 }
 
 func MustNew(ctx context.Context, cfg config.Config) App {
@@ -40,6 +46,10 @@ func MustNew(ctx context.Context, cfg config.Config) App {
 }
 
 func New(ctx context.Context, cfg config.Config) (App, error) {
+	app := &app{
+		cfg:    cfg,
+		logger: appctx.Logger(ctx),
+	}
 	opt := postgres.DBConnOptions{
 		User:    cfg.DB.User,
 		Pass:    cfg.DB.Password,
@@ -53,16 +63,14 @@ func New(ctx context.Context, cfg config.Config) (App, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	app.db = db
 	if err = checkMinio(cfg.Minio); err != nil {
 		return nil, err
 	}
-
-	return &app{
-		cfg:    cfg,
-		db:     db,
-		logger: appctx.Logger(ctx),
-	}, nil
+	if err = app.setupPaymentGateways(); err != nil {
+		return nil, err
+	}
+	return app, nil
 }
 
 func (a *app) Config() config.Config {
@@ -137,4 +145,23 @@ func (a *app) BillService() billPort.Service {
 		)
 	}
 	return a.billService
+}
+
+func (a *app) setupPaymentGateways() error {
+	mockGateway, err := paygw.NewMockGateway(a.cfg.BaseURL)
+	if err != nil {
+		return err
+	}
+	a.paymentGateways[paymentd.MockGateway] = mockGateway
+	return nil
+}
+
+func (a *app) PaymentService() paymentp.Service {
+	if a.paymentService != nil {
+		return a.paymentService
+	}
+	repo := storage.NewPaymentRepo(a.db)
+	gateways := a.paymentGateways
+	a.paymentService = payment.NewService(repo, gateways)
+	return a.paymentService
 }
