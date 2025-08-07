@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler"
+	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
 	paymentd "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/domain"
 	paymentp "github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/port"
 )
@@ -56,7 +56,7 @@ func (g *mockGateway) CreateTransaction(
 		return nil, err
 	}
 
-	body := handler.PayRequest{
+	body := dto.PayRequest{
 		Amount:      tx.Amount,
 		CallbackURL: callbackURL.String(),
 	}
@@ -89,7 +89,7 @@ func (g *mockGateway) VerifyTransaction(
 	}
 	defer resp.Body.Close()
 
-	var respBody handler.VerifyResponse
+	var respBody dto.VerifyResponse
 	err = json.NewDecoder(resp.Body).Decode(&respBody)
 	if err != nil {
 		return err

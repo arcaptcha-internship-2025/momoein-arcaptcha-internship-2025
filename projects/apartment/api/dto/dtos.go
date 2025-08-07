@@ -111,3 +111,23 @@ type SendBillNotificationToUsersResponse struct {
 type CalculateUserBillRequest struct{}
 type CalculateUserBillResponse struct {
 }
+
+type PayRequest struct {
+	Amount      int64  `json:"amount"`
+	CallbackURL string `json:"returnUrl"`
+}
+
+type PayResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Token   string `json:"token,omitempty"`
+}
+
+type VerifyRequest struct {
+	Token string `json:"token"`
+}
+
+type VerifyResponse struct {
+	Code    int    `json:"code"`    //  ==0 success, !=0 failed
+	Message string `json:"message"` // descriptive message
+}

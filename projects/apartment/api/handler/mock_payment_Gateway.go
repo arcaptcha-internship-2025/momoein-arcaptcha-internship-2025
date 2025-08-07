@@ -5,38 +5,19 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/arcaptcha-internship-2025/momoein-apartment/api/dto"
 	appctx "github.com/arcaptcha-internship-2025/momoein-apartment/pkg/context"
 	"go.uber.org/zap"
 )
 
 const mockToken = "mock-token"
 
-type PayRequest struct {
-	Amount      int64  `json:"amount"`
-	CallbackURL string `json:"returnUrl"`
-}
-
-type PayResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-	Token   string `json:"token,omitempty"`
-}
-
-type VerifyRequest struct {
-	Token string `json:"token"`
-}
-
-type VerifyResponse struct {
-	Code    int    `json:"code"`    //  ==0 success, !=0 failed
-	Message string `json:"message"` // descriptive message
-}
-
 func MockGatewayPay() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
 		logPrefix := "mock-gateway-pay"
 
-		var req PayRequest
+		var req dto.PayRequest
 		if err := BodyParse(r, &req); err != nil {
 			BadRequestError(w, r, "invalid request body")
 			log.Error(fmt.Sprintf("%s: BodyParse", logPrefix), zap.Error(err))
@@ -72,7 +53,7 @@ func MockGatewayPay() http.Handler {
 		}
 
 		// Prepare structured JSON response
-		resp := PayResponse{
+		resp := dto.PayResponse{
 			Status:  "completed",
 			Message: "payment successfully completed",
 			Token:   mockToken,
@@ -90,7 +71,7 @@ func MockGatewayVerify() http.Handler {
 		log := appctx.Logger(r.Context())
 		logPrefix := "mock-gateway-verify"
 
-		var req VerifyRequest
+		var req dto.VerifyRequest
 		if r.URL.Query().Has("token") {
 			req.Token = r.URL.Query().Get("token")
 		} else {
@@ -101,7 +82,7 @@ func MockGatewayVerify() http.Handler {
 			}
 		}
 
-		resp := VerifyResponse{
+		resp := dto.VerifyResponse{
 			Code:    0,
 			Message: "payment completed",
 		}
