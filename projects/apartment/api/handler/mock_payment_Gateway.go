@@ -12,9 +12,8 @@ import (
 const mockToken = "mock-token"
 
 type PayRequest struct {
-	Amount    int64  `json:"amount"`
-	ReturnURL string `json:"returnUrl"`
-	Query     string `json:"query"` // Query is expected to be a list of key=value settings separated by ampersands.
+	Amount      int64  `json:"amount"`
+	CallbackURL string `json:"returnUrl"`
 }
 
 type PayResponse struct {
@@ -44,7 +43,7 @@ func MockGatewayPay() http.Handler {
 			return
 		}
 
-		returnURL, err := ParseURL(req.ReturnURL, req.Query)
+		callbackURL, err := ParseURL(req.CallbackURL)
 		if err != nil {
 			BadRequestError(w, r, "invalid callback url")
 			log.Error(fmt.Sprintf("%s: ParseURL", logPrefix), zap.Error(err))
@@ -52,12 +51,12 @@ func MockGatewayPay() http.Handler {
 		}
 
 		// Append mock token to query
-		query := returnURL.Query()
+		query := callbackURL.Query()
 		query.Add("token", mockToken)
-		returnURL.RawQuery = query.Encode()
+		callbackURL.RawQuery = query.Encode()
 
 		// Perform callback request
-		callBackResp, err := http.Post(returnURL.String(), "application/json", nil)
+		callBackResp, err := http.Post(callbackURL.String(), "application/json", nil)
 		if err != nil {
 			InternalServerError(w, r)
 			log.Error(fmt.Sprintf("%s: CallBack", logPrefix), zap.Error(err))
@@ -119,19 +118,14 @@ func MockGatewayVerify() http.Handler {
 	})
 }
 
-func ParseURL(
-	returnURL, query string,
-) (
-	ru *url.URL, err error,
-) {
-	ru, err = url.Parse(returnURL)
+func ParseURL(URL string) (u *url.URL, err error) {
+	u, err = url.Parse(URL)
 	if err != nil {
 		return nil, err
 	}
-	_, err = url.ParseQuery(query)
+	_, err = url.ParseQuery(u.RawQuery)
 	if err != nil {
 		return nil, err
 	}
-	ru.RawQuery = query
 	return
 }
