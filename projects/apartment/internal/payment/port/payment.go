@@ -10,7 +10,7 @@ import (
 type Service interface {
 	PayBill(ctx context.Context, gateway domain.GatewayType, billID, userID common.ID, callBackURL string) (*domain.RedirectGateway, error)
 	PayTotalDebt(ctx context.Context, gateway domain.GatewayType, userID common.ID, callBackURL string) (*domain.RedirectGateway, error)
-	HandleCallback(ctx context.Context, gateway domain.GatewayType, data map[string]string) error
+	HandleCallback(ctx context.Context, gateway domain.GatewayType, data map[string][]string) error
 }
 
 type Repo interface {
@@ -23,5 +23,5 @@ type Repo interface {
 
 type Gateway interface {
 	CreateTransaction(ctx context.Context, tx domain.Transaction) (*domain.RedirectGateway, error)
-	VerifyTransaction(ctx context.Context, data map[string]string) error
+	VerifyTransaction(ctx context.Context, data map[string][]string) error
 }

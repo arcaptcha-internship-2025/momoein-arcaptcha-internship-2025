@@ -3,11 +3,16 @@ package payment
 import (
 	"context"
 	"errors"
+	"net/url"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/common"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/domain"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/internal/payment/port"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/pkg/fp"
+)
+
+const (
+	PaymentIDsKey = "payment-ids"
 )
 
 var (
@@ -46,28 +51,28 @@ func (s *service) PayBill(
 	userID, billID common.ID,
 	callBackURL string,
 ) (
-	redirectURL string, err error,
+	redirect *domain.RedirectGateway, err error,
 ) {
 	gateway, err := s.Gateway(gt)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayBill, err)
+		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
-
 	balanceDue, err := s.repo.UserBillBalanceDue(ctx, userID, billID)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayBill, err)
+		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
 	if balanceDue <= 0 {
-		return "", fp.WrapErrors(ErrOnPayBill, ErrNoBalanceDue)
+		return nil, fp.WrapErrors(ErrOnPayBill, ErrNoBalanceDue)
 	}
-
 	p := &domain.Payment{BillID: billID, PayerID: userID, Amount: balanceDue}
-
-	_, err = s.repo.CreatePayment(ctx, p)
+	p, err = s.repo.CreatePayment(ctx, p)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayBill, err)
+		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
-
+	callBackURL, err = CallbackURLWithPaymentIDs(callBackURL, p.ID)
+	if err != nil {
+		return nil, fp.WrapErrors(ErrOnPayBill, err)
+	}
 	tx := domain.Transaction{
 		Amount:  balanceDue,
 		PayerID: userID,
@@ -76,12 +81,10 @@ func (s *service) PayBill(
 			Amount: balanceDue,
 		}},
 		CallbackURL: callBackURL,
-		Metadata:    map[string]string{"payment_type": "total-debt"},
 	}
-
-	redirectURL, err = gateway.CreateTransaction(ctx, tx)
+	redirect, err = gateway.CreateTransaction(ctx, tx)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayBill, err)
+		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
 	return
 }
@@ -92,24 +95,21 @@ func (s *service) PayTotalDebt(
 	userID common.ID,
 	callBackURL string,
 ) (
-	redirectURL string, err error,
+	redirect *domain.RedirectGateway, err error,
 ) {
 	gateway, err := s.Gateway(gt)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayTotalDebt, err)
+		return nil, fp.WrapErrors(ErrOnPayTotalDebt, err)
 	}
-
 	balanceDues, err := s.repo.UserBillsBalanceDue(ctx, userID)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayTotalDebt, err)
+		return nil, fp.WrapErrors(ErrOnPayTotalDebt, err)
 	}
 	if len(balanceDues) == 0 {
-		return "", fp.WrapErrors(ErrOnPayTotalDebt, ErrNoBalanceDue)
+		return nil, fp.WrapErrors(ErrOnPayTotalDebt, ErrNoBalanceDue)
 	}
-
 	var totalAmount int64
 	var payments []*domain.Payment
-
 	for _, bDue := range balanceDues {
 		if bDue.Amount <= 0 {
 			continue
@@ -124,51 +124,68 @@ func (s *service) PayTotalDebt(
 		payments = append(payments, p)
 		totalAmount += bDue.Amount
 	}
-
-	_, err = s.repo.BatchCreatePayment(ctx, payments)
+	payments, err = s.repo.BatchCreatePayment(ctx, payments)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayTotalDebt, err)
+		return nil, fp.WrapErrors(ErrOnPayTotalDebt, err)
 	}
-
+	paymentIDs := []common.ID{}
+	for i := range payments {
+		paymentIDs = append(paymentIDs, payments[i].ID)
+	}
+	callBackURL, err = CallbackURLWithPaymentIDs(callBackURL, paymentIDs...)
+	if err != nil {
+		return nil, fp.WrapErrors(ErrOnPayBill, err)
+	}
 	tx := domain.Transaction{
+		PaymentIDs:  paymentIDs,
 		Amount:      totalAmount,
 		PayerID:     userID,
 		Bills:       balanceDues,
-		CallbackURL: "",
-		Metadata:    map[string]string{"payment_type": "total-debt"},
+		CallbackURL: callBackURL,
 	}
-
-	redirectURL, err = gateway.CreateTransaction(ctx, tx)
+	redirect, err = gateway.CreateTransaction(ctx, tx)
 	if err != nil {
-		return "", fp.WrapErrors(ErrOnPayTotalDebt, err)
+		return nil, fp.WrapErrors(ErrOnPayTotalDebt, err)
 	}
 	return
+}
+
+func CallbackURLWithPaymentIDs(callbackURL string, IDs ...common.ID) (string, error) {
+	cURL, err := url.Parse(callbackURL)
+	if err != nil {
+		return "", err
+	}
+	query, err := url.ParseQuery(cURL.RawQuery)
+	if err != nil {
+		return "", err
+	}
+	for i := range IDs {
+		query.Add(PaymentIDsKey, IDs[i].String())
+	}
+	cURL.RawQuery = query.Encode()
+	return cURL.String(), nil
 }
 
 func (s *service) HandleCallback(
 	ctx context.Context,
 	gt domain.GatewayType,
-	data map[string]string,
+	data map[string][]string,
 ) error {
 	gateway, err := s.Gateway(gt)
 	if err != nil {
 		return fp.WrapErrors(ErrOnCallback, err)
 	}
-
-	tx, err := gateway.VerifyTransaction(ctx, data)
+	err = gateway.VerifyTransaction(ctx, data)
 	if err != nil {
 		return fp.WrapErrors(ErrOnCallback, ErrInvalidCallback, err)
 	}
-
-	status := domain.PaymentStatus(data["status"])
-	if !status.IsValid() {
-		return fp.WrapErrors(ErrOnCallback, ErrInvalidStatus)
+	paymentIDs := []common.ID{}
+	for _, id := range data[PaymentIDsKey] {
+		paymentIDs = append(paymentIDs, common.IDFromText(id))
 	}
-
-	err = s.repo.UpdateStatus(ctx, tx.PaymentIDs, status)
+	err = s.repo.UpdateStatus(ctx, paymentIDs, domain.PaymentPaid)
 	if err != nil {
 		return fp.WrapErrors(ErrOnCallback, err)
 	}
-
 	return nil
 }
