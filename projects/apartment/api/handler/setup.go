@@ -7,6 +7,8 @@ import (
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/middleware"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/app"
+	_ "github.com/arcaptcha-internship-2025/momoein-apartment/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func Run(app app.App) error {
@@ -32,6 +34,10 @@ func RegisterAPI(r *router.Router, app app.App) {
 	r.Get("/", getRootHandler())
 
 	r.Group("/api/v1", func(r *router.Router) {
+
+		r.Group("/docs", func(r *router.Router) {
+			r.Get("/swagger/", httpSwagger.Handler())
+		})
 
 		r.Group("/auth", func(r *router.Router) {
 			r.Post("/sign-up", getSignUpHandler(usrSvcGtr, app.Config().Auth))
@@ -64,9 +70,9 @@ func RegisterAPI(r *router.Router, app app.App) {
 		})
 
 		r.Group("/payment", func(r *router.Router) {
-			r.Post("/pay-bill", nil)
-			r.Post("/pay-total-debt", nil)
-			r.Get("/callback", nil)
+			r.Post("/pay-bill", PayUserBill())
+			r.Post("/pay-total-debt", PayTotalDebt())
+			r.Get("/callback", CallbackHandler())
 
 			r.Group("/mock-gateway", func(r *router.Router) {
 				r.Post("/pay", MockGatewayPay())
