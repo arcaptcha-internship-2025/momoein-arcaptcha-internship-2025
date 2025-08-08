@@ -100,7 +100,12 @@ func InviteApartmentMember(svcGetter ServiceGetter[apartmentPort.Service], accep
 		member, err := svc.InviteMember(r.Context(), adminId, req.ApartmentID, common.Email(req.UserEmail), acceptURL)
 		if err != nil {
 			log.Error("invite member", zap.Error(err))
-			Error(w, r, http.StatusInternalServerError, "InternalServerError")
+			switch {
+			case errors.Is(err, apartment.ErrInvalidAdmin):
+				Error(w, r, http.StatusForbidden, err.Error())
+			default:
+				Error(w, r, http.StatusInternalServerError, "InternalServerError")
+			}
 			return
 		}
 
