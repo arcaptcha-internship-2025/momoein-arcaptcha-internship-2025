@@ -363,7 +363,12 @@ func GetUserBillShares(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 		billShares, err := svc.GetUserBillShares(r.Context(), id)
 		if err != nil {
 			log.Error("", zap.Error(err))
-			InternalServerError(w, r)
+			switch {
+			case errors.Is(err, bill.ErrNotFound):
+				Error(w, r, http.StatusNotFound)
+			default:
+				InternalServerError(w, r)
+			}
 			return
 		}
 
