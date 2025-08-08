@@ -56,19 +56,30 @@ func (g *mockGateway) CreateTransaction(
 		return nil, err
 	}
 
-	body := dto.PayRequest{
+	body, err := makeMapBody(&dto.PayRequest{
 		Amount:      tx.Amount,
 		CallbackURL: callbackURL.String(),
-	}
-	bBody, err := json.Marshal(&body)
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &paymentd.RedirectGateway{
 		Method: http.MethodPost,
 		URL:    gatewayURL.String(),
-		Body:   bBody,
+		Body:   body,
 	}, nil
+}
+
+func makeMapBody(body any) (map[string]any, error) {
+	byteBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	var mapBody map[string]any
+	if err = json.Unmarshal(byteBody, &mapBody); err != nil {
+		return nil, err
+	}
+	return mapBody, nil
 }
 
 func (g *mockGateway) VerifyTransaction(

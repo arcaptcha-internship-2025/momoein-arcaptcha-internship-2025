@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -41,7 +42,11 @@ func (r *paymentRepo) CreatePayment(
 		)
 		RETURNING id
 	`
-
+	callbackData, err := json.Marshal(&p.CallbackData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal callback date: %w", err)
+	}
+	
 	args := []any{
 		p.BillID,
 		p.PayerID,
@@ -50,11 +55,11 @@ func (r *paymentRepo) CreatePayment(
 		p.Status,
 		p.Gateway,
 		p.TransactionID,
-		p.CallbackData,
+		callbackData,
 	}
 
 	var idStr string
-	err := r.db.QueryRowContext(ctx, query, args...).Scan(&idStr)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&idStr)
 	if err != nil {
 		return nil, err
 	}

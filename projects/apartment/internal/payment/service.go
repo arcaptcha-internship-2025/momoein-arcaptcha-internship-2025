@@ -13,6 +13,7 @@ import (
 
 const (
 	PaymentIDsKey = "payment-ids"
+	GatewayKey    = "gateway"
 )
 
 var (
@@ -64,18 +65,26 @@ func (s *service) PayBill(
 	if balanceDue <= 0 {
 		return nil, fp.WrapErrors(ErrOnPayBill, ErrNoBalanceDue)
 	}
-	p := &domain.Payment{BillID: billID, PayerID: userID, Amount: balanceDue}
+	p := &domain.Payment{
+		BillID:  billID,
+		PayerID: userID,
+		Amount:  balanceDue,
+		ID:      userID,
+		Status:  domain.PaymentPending,
+		Gateway: gt.String(),
+	}
 	p, err = s.repo.CreatePayment(ctx, p)
 	if err != nil {
 		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
-	callBackURL, err = CallbackURLWithPaymentIDs(callBackURL, p.ID)
+	callBackURL, err = CallbackURLWithPaymentIDs(callBackURL, gt, p.ID)
 	if err != nil {
 		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
 	tx := domain.Transaction{
-		Amount:  balanceDue,
-		PayerID: userID,
+		PaymentIDs: []common.ID{p.ID},
+		Amount:     balanceDue,
+		PayerID:    userID,
 		Bills: []domain.BillWithAmount{{
 			BillID: billID,
 			Amount: balanceDue,
@@ -132,7 +141,7 @@ func (s *service) PayTotalDebt(
 	for i := range payments {
 		paymentIDs = append(paymentIDs, payments[i].ID)
 	}
-	callBackURL, err = CallbackURLWithPaymentIDs(callBackURL, paymentIDs...)
+	callBackURL, err = CallbackURLWithPaymentIDs(callBackURL, gt, paymentIDs...)
 	if err != nil {
 		return nil, fp.WrapErrors(ErrOnPayBill, err)
 	}
@@ -150,7 +159,13 @@ func (s *service) PayTotalDebt(
 	return
 }
 
-func CallbackURLWithPaymentIDs(callbackURL string, IDs ...common.ID) (string, error) {
+func CallbackURLWithPaymentIDs(
+	callbackURL string,
+	gt domain.GatewayType,
+	IDs ...common.ID,
+) (
+	string, error,
+) {
 	cURL, err := url.Parse(callbackURL)
 	if err != nil {
 		return "", err
@@ -159,6 +174,7 @@ func CallbackURLWithPaymentIDs(callbackURL string, IDs ...common.ID) (string, er
 	if err != nil {
 		return "", err
 	}
+	query.Add(GatewayKey, gt.String())
 	for i := range IDs {
 		query.Add(PaymentIDsKey, IDs[i].String())
 	}
