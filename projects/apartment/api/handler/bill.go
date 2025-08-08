@@ -87,14 +87,6 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 			return
 		}
 
-		b.Status = domain.PaymentStatus(r.FormValue("status"))
-
-		if paidAtStr := r.FormValue("paidAt"); paidAtStr != "" {
-			if b.PaidAt, _ = parseDateField(r, "paidAt", dateLayout, log, w); b.PaidAt.IsZero() {
-				return
-			}
-		}
-
 		apartmentID := r.FormValue("apartmentID")
 		if apartmentID == "" {
 			Error(w, r, http.StatusBadRequest, "apartmentID is required")

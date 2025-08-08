@@ -86,7 +86,6 @@ func createValidBill() *domain.Bill {
 		Image:       &domain.Image{Name: "mockImageData"},
 		DueDate:     time.Now().Add(3 * 24 * time.Hour),
 		ApartmentID: common.NewRandomID(),
-		Status:      domain.PaymentStatusUnpaid,
 	}
 }
 

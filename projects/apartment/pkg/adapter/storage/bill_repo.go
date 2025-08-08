@@ -29,19 +29,16 @@ func (r *billRepo) Create(ctx context.Context, b *domain.Bill) (*domain.Bill, er
 		bill_type,
 		bill_id,
 		amount,
-		status,
-		paid_at,
 		due_date,
 		image_id,
 		apartment_id
 	)
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	VALUES($1, $2, $3, $4, $5, $6, $7)
 	RETURNING id;
 	`
 	args := []any{
 		b.Name, b.Type.String(), b.BillNumber,
-		b.Amount, b.Status, b.PaidAt,
-		b.DueDate, b.ImageID, b.ApartmentID,
+		b.Amount, b.DueDate, b.ImageID, b.ApartmentID,
 	}
 
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&b.ID)
@@ -54,8 +51,8 @@ func (r *billRepo) Create(ctx context.Context, b *domain.Bill) (*domain.Bill, er
 
 func (r *billRepo) Read(ctx context.Context, filter *domain.BillFilter) (*domain.Bill, error) {
 	query := `SELECT 
-		id, name, bill_type, bill_id, amount, status, 
-		paid_at, due_date, image_id, apartment_id 
+		id, name, bill_type, bill_id, amount,  
+		due_date, image_id, apartment_id 
 		FROM bills WHERE deleted_at IS NULL`
 
 	args := []interface{}{}
@@ -96,8 +93,6 @@ func (r *billRepo) Read(ctx context.Context, filter *domain.BillFilter) (*domain
 		&b.Type,
 		&b.BillNumber,
 		&b.Amount,
-		&b.Status,
-		&b.PaidAt,
 		&b.DueDate,
 		&b.ImageID,
 		&b.ApartmentID,

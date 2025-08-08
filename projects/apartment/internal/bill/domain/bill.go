@@ -55,8 +55,6 @@ type Bill struct {
 	BillNumber  int64
 	DueDate     time.Time
 	Amount      int64
-	Status      PaymentStatus
-	PaidAt      time.Time
 	Image       *Image
 	HasImage    bool
 	ImageID     common.ID
@@ -78,12 +76,6 @@ func (b *Bill) Validate() error {
 	}
 	if b.ApartmentID == common.NilID {
 		return ErrMissingApartmentID
-	}
-	if len(b.Status) == 0 {
-		return ErrMissingPaymentStatus
-	}
-	if !b.Status.IsValid() {
-		return ErrInvalidPaymentStatus
 	}
 	return nil
 }
@@ -110,16 +102,6 @@ func (b *Bill) SetDueDate(t time.Time) *Bill {
 
 func (b *Bill) SetAmount(i int64) *Bill {
 	b.Amount = i
-	return b
-}
-
-func (b *Bill) SetStatus(s PaymentStatus) *Bill {
-	b.Status = s
-	return b
-}
-
-func (b *Bill) SetPaidAt(t time.Time) *Bill {
-	b.PaidAt = t
 	return b
 }
 
@@ -150,10 +132,6 @@ type BillFilter struct {
 	ApartmentID common.ID
 	Type        BillType
 	BillNumber  int64
-}
-
-func (b Bill) IsPaid() bool {
-	return b.Status == PaymentStatusPaid && !b.PaidAt.IsZero()
 }
 
 type UserBillShare struct {
