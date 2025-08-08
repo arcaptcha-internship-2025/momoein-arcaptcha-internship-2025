@@ -110,11 +110,14 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 		newBill, err := svc.AddBill(r.Context(), &b)
 		if err != nil {
 			log.Error("failed to create bill", zap.Error(err))
-			if errors.Is(err, bill.ErrBillOnValidate) {
+			switch {
+			case errors.Is(err, bill.ErrBillOnValidate):
 				BadRequestError(w, r, err.Error())
-				return
+			case errors.Is(err, bill.ErrAlreadyExists):
+				BadRequestError(w, r, err.Error())
+			default:
+				InternalServerError(w, r)
 			}
-			InternalServerError(w, r)
 			return
 		}
 

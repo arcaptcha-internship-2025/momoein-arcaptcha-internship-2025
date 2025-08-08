@@ -34,8 +34,10 @@ func (r *billRepo) Create(ctx context.Context, b *domain.Bill) (*domain.Bill, er
 		apartment_id
 	)
 	VALUES($1, $2, $3, $4, $5, $6, $7)
+	ON CONFLICT (bill_id) DO NOTHING
 	RETURNING id;
 	`
+
 	args := []any{
 		b.Name, b.Type.String(), b.BillNumber,
 		b.Amount, b.DueDate, b.ImageID, b.ApartmentID,
@@ -43,6 +45,11 @@ func (r *billRepo) Create(ctx context.Context, b *domain.Bill) (*domain.Bill, er
 
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&b.ID)
 	if err != nil {
+		// If no ID was returned, it means bill_id already exists
+		if err == sql.ErrNoRows {
+			e := fmt.Errorf("bill with id %d already exists", b.BillNumber)
+			return nil, fp.WrapErrors(bill.ErrAlreadyExists, e)
+		}
 		return nil, err
 	}
 
