@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/api/v1/apartment": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Adds a new apartment and assigns the current user as admin",
                 "consumes": [
                     "application/json"
@@ -69,6 +74,11 @@ const docTemplate = `{
         },
         "/api/v1/apartment/invite": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Sends an invitation to a user to join an apartment",
                 "consumes": [
                     "application/json"
@@ -115,6 +125,11 @@ const docTemplate = `{
         },
         "/api/v1/apartment/invite/accept": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Accepts an invitation to join an apartment using a token",
                 "consumes": [
                     "application/json"
@@ -165,6 +180,11 @@ const docTemplate = `{
         },
         "/api/v1/apartment/members": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a list of users in the apartment (not implemented)",
                 "produces": [
                     "application/json"
@@ -335,6 +355,11 @@ const docTemplate = `{
         },
         "/api/v1/bill": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns details of a bill by ID",
                 "consumes": [
                     "application/json"
@@ -385,6 +410,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Adds a new bill to an apartment. Accepts multipart/form-data for image upload.",
                 "consumes": [
                     "multipart/form-data"
@@ -484,6 +514,11 @@ const docTemplate = `{
         },
         "/api/v1/bill/image": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the image file for a bill",
                 "consumes": [
                     "application/json"
@@ -529,7 +564,12 @@ const docTemplate = `{
             }
         },
         "/api/v1/payment/callback": {
-            "get": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Handles payment gateway callback and updates payment status",
                 "consumes": [
                     "application/json"
@@ -693,6 +733,11 @@ const docTemplate = `{
         },
         "/api/v1/payment/pay-bill": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Initiates payment for a specific bill using a gateway",
                 "consumes": [
                     "application/json"
@@ -739,6 +784,11 @@ const docTemplate = `{
         },
         "/api/v1/payment/pay-total-debt": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Initiates payment for all outstanding bills for the authenticated user",
                 "consumes": [
                     "application/json"
@@ -811,6 +861,11 @@ const docTemplate = `{
         },
         "/api/v1/user/bill-shares": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the bill shares for the authenticated user",
                 "produces": [
                     "application/json"
@@ -837,6 +892,11 @@ const docTemplate = `{
         },
         "/api/v1/user/total-debt": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns the total debt for the authenticated user",
                 "produces": [
                     "application/json"
@@ -892,17 +952,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "paidAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "maybe to remove ??",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/internal_bill_domain.PaymentStatus"
-                        }
-                    ]
                 },
                 "type": {
                     "$ref": "#/definitions/domain.BillType"
@@ -1105,10 +1154,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "body": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "object",
+                    "additionalProperties": {}
                 },
                 "method": {
                     "type": "string"
@@ -1193,19 +1240,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "internal_bill_domain.PaymentStatus": {
-            "type": "string",
-            "enum": [
-                "unpaid",
-                "paid",
-                "overdue"
-            ],
-            "x-enum-varnames": [
-                "PaymentStatusUnpaid",
-                "PaymentStatusPaid",
-                "PaymentStatusOverdue"
-            ]
         }
     }
 }`

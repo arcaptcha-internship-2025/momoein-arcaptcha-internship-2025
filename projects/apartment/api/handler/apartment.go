@@ -20,6 +20,7 @@ import (
 // @Tags         Apartment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.Apartment  true  "Apartment Info"
 // @Success      201   {object}  dto.Apartment
 // @Failure      400   {object}  dto.Error
@@ -67,6 +68,7 @@ func AddApartment(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {
 // @Tags         Apartment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.InviteUserToApartmentRequest  true  "Invite Request"
 // @Success      200   {object}  dto.InviteUserToApartmentResponse
 // @Failure      400   {object}  dto.Error
@@ -125,6 +127,7 @@ const InviteTokenKey string = "token"
 // @Tags         Apartment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        token  query    string  true  "Invitation Token"
 // @Success      202   {string}  string  "Accepted"
 // @Failure      400   {object}  dto.Error
@@ -167,6 +170,7 @@ func AcceptApartmentInvite(svcGetter ServiceGetter[apartmentPort.Service]) http.
 // @Description  Returns a list of users in the apartment (not implemented)
 // @Tags         Apartment
 // @Produce      json
+// @Security 	 BearerAuth
 // @Failure      501   {object}  dto.Error
 // @Router       /api/v1/apartment/members [get]
 func ApartmentMembers(svcGetter ServiceGetter[apartmentPort.Service]) http.Handler {

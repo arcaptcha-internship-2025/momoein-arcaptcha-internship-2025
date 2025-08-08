@@ -38,6 +38,7 @@ const dateLayout = "2006-01-02"
 // @Tags         Bill
 // @Accept       multipart/form-data
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        name         formData  string  true   "Bill Name"
 // @Param        type         formData  string  true   "Bill Type"
 // @Param        billNumber   formData  integer true   "Bill Number"
@@ -212,6 +213,7 @@ func handleImageUpload(r *http.Request, b *domain.Bill, log *zap.Logger, w http.
 // @Tags         Bill
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.GetBillRequest  true  "Bill ID"
 // @Success      200   {object}  domain.Bill
 // @Failure      400   {object}  dto.Error
@@ -255,6 +257,7 @@ func GetBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 // @Tags         Bill
 // @Accept       json
 // @Produce      image/png
+// @Security 	 BearerAuth
 // @Param        body  body      dto.GetBillImageRequest  true  "Image ID"
 // @Success      200   {file}    file
 // @Failure      400   {object}  dto.Error
@@ -310,6 +313,7 @@ func GetBillImage(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 // @Description  Returns the total debt for the authenticated user
 // @Tags         Bill
 // @Produce      json
+// @Security 	 BearerAuth
 // @Success      200   {object}  dto.UserTotalDebt
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/user/total-debt [get]
@@ -347,6 +351,7 @@ func GetUserTotalDept(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 // @Description  Returns the bill shares for the authenticated user
 // @Tags         Bill
 // @Produce      json
+// @Security 	 BearerAuth
 // @Success      200   {object}  dto.BillSharesResponse
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/user/bill-shares [get]

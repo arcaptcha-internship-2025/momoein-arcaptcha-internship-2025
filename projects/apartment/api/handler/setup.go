@@ -20,6 +20,11 @@ func Run(app app.App) error {
 	return http.ListenAndServe(addr, r)
 }
 
+// RegisterAPI
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func RegisterAPI(r *router.Router, app app.App) {
 	jwtSecret := []byte(app.Config().Auth.JWTSecret)
 

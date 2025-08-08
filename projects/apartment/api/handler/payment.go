@@ -21,6 +21,7 @@ import (
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.PayBillRequest  true  "Bill Payment Request"
 // @Success      201   {object}  dto.RedirectGateway
 // @Failure      400   {object}  dto.Error
@@ -77,6 +78,7 @@ func PayUserBill(svcGtr ServiceGetter[paymentp.Service], callbackURL string) htt
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.PayTotalDebtRequest  true  "Total Debt Payment Request"
 // @Success      201   {object}  dto.RedirectGateway
 // @Failure      400   {object}  dto.Error
@@ -132,6 +134,7 @@ func PayTotalDebt(svcGtr ServiceGetter[paymentp.Service], callbackURL string) ht
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        gateway  query    string  true  "Gateway"
 // @Param        token    query    string  false "Payment Token"
 // @Param        payment-ids query []string false "Payment IDs"
