@@ -1,12 +1,21 @@
-migrate-db:
-	@echo "📜 Running migrations from ./sql/schema.sql..."
+migrate-db-dev:
+	@echo "📜 Running migrations from ./sql/schema.pg.sql..."
 	
 	@cat ./sql/schema.pg.sql | docker exec -i apartment-db \
 		env PGPASSWORD=postgres \
 		psql -v ON_ERROR_STOP=1 -U postgres -d postgres
 
 	@echo "✅ Migration complete!"
+
+migrate-db:
+	@echo "📜 Running migrations from ./sql/schema.pg.prod.sql..."
 	
+	@cat ./sql/schema.pg.prod.sql | docker exec -i apartment-db \
+		env PGPASSWORD=postgres \
+		psql -v ON_ERROR_STOP=1 -U postgres -d postgres
+
+	@echo "✅ Migration complete!"
+
 swagger:
 	@swag init -g cmd/main.go -o ./docs
 
