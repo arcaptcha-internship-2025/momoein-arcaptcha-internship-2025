@@ -63,6 +63,9 @@ func New(ctx context.Context, cfg config.Config) (App, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
 	app.db = db
 	if err = checkMinio(cfg.Minio); err != nil {
 		return nil, err

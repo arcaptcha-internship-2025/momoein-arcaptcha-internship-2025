@@ -146,9 +146,9 @@ type PayTotalDebtRequest struct {
 }
 
 type RedirectGateway struct {
-	Method string `json:"method"`
-	URL    string `json:"url"`
-	Body   []byte `json:"body"`
+	Method string         `json:"method"`
+	URL    string         `json:"url"`
+	Body   map[string]any `json:"body"`
 }
 
 type SupportedGatewaysResponse struct {

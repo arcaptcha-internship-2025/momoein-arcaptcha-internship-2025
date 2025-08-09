@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -61,7 +63,8 @@ func MockGatewayPay() http.Handler {
 		// Handle non-2xx callback responses
 		if callBackResp.StatusCode >= 400 {
 			log.Error(fmt.Sprintf("%s: callback returned error status: %d", logPrefix, callBackResp.StatusCode))
-			Error(w, r, http.StatusBadGateway, "callback endpoint returned error")
+			callbackResult := fmt.Sprint(ResponseBodyToMap(callBackResp.Body))
+			Error(w, r, http.StatusBadGateway, "callback endpoint returned error", callbackResult)
 			return
 		}
 
@@ -77,6 +80,13 @@ func MockGatewayPay() http.Handler {
 			log.Error(fmt.Sprintf("%s: WriteJson error", logPrefix), zap.Error(err))
 		}
 	})
+}
+
+func ResponseBodyToMap(body io.ReadCloser) map[string]any {
+	content, _ := io.ReadAll(body)
+	var contentMap map[string]any
+	_ = json.Unmarshal(content, &contentMap)
+	return contentMap
 }
 
 // MockGatewayVerify

@@ -85,5 +85,5 @@ type Transaction struct {
 type RedirectGateway struct {
 	Method string
 	URL    string
-	Body   []byte
+	Body   map[string]any
 }

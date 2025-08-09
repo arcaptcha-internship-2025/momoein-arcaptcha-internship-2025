@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"path"
 
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/middleware"
 	"github.com/arcaptcha-internship-2025/momoein-apartment/api/handler/router"
@@ -21,6 +20,11 @@ func Run(app app.App) error {
 	return http.ListenAndServe(addr, r)
 }
 
+// RegisterAPI
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func RegisterAPI(r *router.Router, app app.App) {
 	jwtSecret := []byte(app.Config().Auth.JWTSecret)
 
@@ -72,12 +76,12 @@ func RegisterAPI(r *router.Router, app app.App) {
 		})
 
 		r.Group("/payment", func(r *router.Router) {
-			callbackURL := path.Join(app.Config().BaseURL, "/api/v1/payment/callback")
+			callbackURL := app.Config().BaseURL + "/api/v1/payment/callback"
 			chain := router.Chain{middleware.NewAuth(jwtSecret)}
 
 			r.Post("/pay-bill", chain.Then(PayUserBill(paySvcGtr, callbackURL)))
 			r.Post("/pay-total-debt", chain.Then(PayTotalDebt(paySvcGtr, callbackURL)))
-			r.Get("/callback", CallbackHandler(paySvcGtr))
+			r.Post("/callback", CallbackHandler(paySvcGtr))
 			r.Get("/supported-gateways", SupportedGateways(paySvcGtr))
 
 			r.Group("/mock-gateway", func(r *router.Router) {

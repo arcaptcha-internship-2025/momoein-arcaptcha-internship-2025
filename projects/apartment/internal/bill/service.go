@@ -20,6 +20,7 @@ var (
 	ErrNotFound       = errors.New("source not found")
 	ErrBillOnValidate = errors.New("invalid bill")
 	ErrOnGetBillImage = errors.New("error on get bill image")
+	ErrAlreadyExists  = errors.New("source already exists")
 )
 
 type service struct {

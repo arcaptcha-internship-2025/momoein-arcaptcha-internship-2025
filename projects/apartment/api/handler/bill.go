@@ -38,6 +38,7 @@ const dateLayout = "2006-01-02"
 // @Tags         Bill
 // @Accept       multipart/form-data
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        name         formData  string  true   "Bill Name"
 // @Param        type         formData  string  true   "Bill Type"
 // @Param        billNumber   formData  integer true   "Bill Number"
@@ -87,14 +88,6 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 			return
 		}
 
-		b.Status = domain.PaymentStatus(r.FormValue("status"))
-
-		if paidAtStr := r.FormValue("paidAt"); paidAtStr != "" {
-			if b.PaidAt, _ = parseDateField(r, "paidAt", dateLayout, log, w); b.PaidAt.IsZero() {
-				return
-			}
-		}
-
 		apartmentID := r.FormValue("apartmentID")
 		if apartmentID == "" {
 			Error(w, r, http.StatusBadRequest, "apartmentID is required")
@@ -118,11 +111,14 @@ func AddBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 		newBill, err := svc.AddBill(r.Context(), &b)
 		if err != nil {
 			log.Error("failed to create bill", zap.Error(err))
-			if errors.Is(err, bill.ErrBillOnValidate) {
+			switch {
+			case errors.Is(err, bill.ErrBillOnValidate):
 				BadRequestError(w, r, err.Error())
-				return
+			case errors.Is(err, bill.ErrAlreadyExists):
+				BadRequestError(w, r, err.Error())
+			default:
+				InternalServerError(w, r)
 			}
-			InternalServerError(w, r)
 			return
 		}
 
@@ -217,6 +213,7 @@ func handleImageUpload(r *http.Request, b *domain.Bill, log *zap.Logger, w http.
 // @Tags         Bill
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.GetBillRequest  true  "Bill ID"
 // @Success      200   {object}  domain.Bill
 // @Failure      400   {object}  dto.Error
@@ -260,6 +257,7 @@ func GetBill(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 // @Tags         Bill
 // @Accept       json
 // @Produce      image/png
+// @Security 	 BearerAuth
 // @Param        body  body      dto.GetBillImageRequest  true  "Image ID"
 // @Success      200   {file}    file
 // @Failure      400   {object}  dto.Error
@@ -315,6 +313,7 @@ func GetBillImage(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 // @Description  Returns the total debt for the authenticated user
 // @Tags         Bill
 // @Produce      json
+// @Security 	 BearerAuth
 // @Success      200   {object}  dto.UserTotalDebt
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/user/total-debt [get]
@@ -352,6 +351,7 @@ func GetUserTotalDept(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 // @Description  Returns the bill shares for the authenticated user
 // @Tags         Bill
 // @Produce      json
+// @Security 	 BearerAuth
 // @Success      200   {object}  dto.BillSharesResponse
 // @Failure      500   {object}  dto.Error
 // @Router       /api/v1/user/bill-shares [get]
@@ -371,7 +371,12 @@ func GetUserBillShares(svcGetter ServiceGetter[billPort.Service]) http.Handler {
 		billShares, err := svc.GetUserBillShares(r.Context(), id)
 		if err != nil {
 			log.Error("", zap.Error(err))
-			InternalServerError(w, r)
+			switch {
+			case errors.Is(err, bill.ErrNotFound):
+				Error(w, r, http.StatusNotFound)
+			default:
+				InternalServerError(w, r)
+			}
 			return
 		}
 

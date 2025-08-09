@@ -9,3 +9,11 @@ migrate-db:
 	
 swagger:
 	@swag init -g cmd/main.go -o ./docs
+
+env:
+	@chmod +x env.sh
+	@./env.sh
+
+env-quick:
+	@chmod +x env.sh
+	@./env.sh quick

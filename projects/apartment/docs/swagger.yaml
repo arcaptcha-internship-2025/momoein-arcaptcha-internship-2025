@@ -19,12 +19,6 @@ definitions:
         type: string
       name:
         type: string
-      paidAt:
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/internal_bill_domain.PaymentStatus'
-        description: maybe to remove ??
       type:
         $ref: '#/definitions/domain.BillType'
     type: object
@@ -156,9 +150,8 @@ definitions:
   dto.RedirectGateway:
     properties:
       body:
-        items:
-          type: integer
-        type: array
+        additionalProperties: {}
+        type: object
       method:
         type: string
       url:
@@ -213,16 +206,6 @@ definitions:
         description: descriptive message
         type: string
     type: object
-  internal_bill_domain.PaymentStatus:
-    enum:
-    - unpaid
-    - paid
-    - overdue
-    type: string
-    x-enum-varnames:
-    - PaymentStatusUnpaid
-    - PaymentStatusPaid
-    - PaymentStatusOverdue
 info:
   contact: {}
 paths:
@@ -257,6 +240,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Create a new apartment
       tags:
       - Apartment
@@ -287,6 +272,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Invite user to apartment
       tags:
       - Apartment
@@ -320,6 +307,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Accept apartment invitation
       tags:
       - Apartment
@@ -333,6 +322,8 @@ paths:
           description: Not Implemented
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: List apartment members
       tags:
       - Apartment
@@ -465,6 +456,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Get bill details
       tags:
       - Bill
@@ -533,6 +526,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Add a new bill
       tags:
       - Bill
@@ -563,11 +558,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Get bill image
       tags:
       - Bill
   /api/v1/payment/callback:
-    get:
+    post:
       consumes:
       - application/json
       description: Handles payment gateway callback and updates payment status
@@ -603,6 +600,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Payment callback
       tags:
       - Payment
@@ -700,6 +699,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Pay a bill
       tags:
       - Payment
@@ -731,6 +732,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Pay total debt
       tags:
       - Payment
@@ -765,6 +768,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Get user's bill shares
       tags:
       - Bill
@@ -782,6 +787,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.Error'
+      security:
+      - BearerAuth: []
       summary: Get user's total debt
       tags:
       - Bill

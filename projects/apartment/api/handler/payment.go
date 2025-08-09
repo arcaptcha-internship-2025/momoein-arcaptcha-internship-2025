@@ -21,6 +21,7 @@ import (
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.PayBillRequest  true  "Bill Payment Request"
 // @Success      201   {object}  dto.RedirectGateway
 // @Failure      400   {object}  dto.Error
@@ -55,6 +56,8 @@ func PayUserBill(svcGtr ServiceGetter[paymentp.Service], callbackURL string) htt
 			switch {
 			case errors.Is(err, payment.ErrUnknownGateway):
 				Error(w, r, http.StatusBadRequest, payment.ErrUnknownGateway.Error())
+			case errors.Is(err, payment.ErrNoBalanceDue):
+				Error(w, r, http.StatusConflict, err.Error())
 			default:
 				InternalServerError(w, r)
 			}
@@ -75,6 +78,7 @@ func PayUserBill(svcGtr ServiceGetter[paymentp.Service], callbackURL string) htt
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        body  body      dto.PayTotalDebtRequest  true  "Total Debt Payment Request"
 // @Success      201   {object}  dto.RedirectGateway
 // @Failure      400   {object}  dto.Error
@@ -108,6 +112,8 @@ func PayTotalDebt(svcGtr ServiceGetter[paymentp.Service], callbackURL string) ht
 			switch {
 			case errors.Is(err, payment.ErrUnknownGateway):
 				Error(w, r, http.StatusBadRequest, payment.ErrUnknownGateway.Error())
+			case errors.Is(err, payment.ErrNoBalanceDue):
+				Error(w, r, http.StatusConflict, err.Error())
 			default:
 				InternalServerError(w, r)
 			}
@@ -128,13 +134,14 @@ func PayTotalDebt(svcGtr ServiceGetter[paymentp.Service], callbackURL string) ht
 // @Tags         Payment
 // @Accept       json
 // @Produce      json
+// @Security 	 BearerAuth
 // @Param        gateway  query    string  true  "Gateway"
 // @Param        token    query    string  false "Payment Token"
 // @Param        payment-ids query []string false "Payment IDs"
 // @Success      200   {object}  dto.PayResponse
 // @Failure      400   {object}  dto.Error
 // @Failure      500   {object}  dto.Error
-// @Router       /api/v1/payment/callback [get]
+// @Router       /api/v1/payment/callback [post]
 func CallbackHandler(svcGtr ServiceGetter[paymentp.Service]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := appctx.Logger(r.Context())
