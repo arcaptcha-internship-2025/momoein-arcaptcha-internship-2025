@@ -30,7 +30,9 @@ func (r *apartmentRepo) Create(ctx context.Context, a *domain.Apartment) (*domai
 		return nil, err
 	}
 	defer func() {
-		_ = tx.Rollback()
+		if err != nil {
+			_ = tx.Rollback()
+		}
 	}()
 
 	ap := types.ApartmentDomainToStorage(a)
@@ -47,7 +49,7 @@ func (r *apartmentRepo) Create(ctx context.Context, a *domain.Apartment) (*domai
 	}
 
 	a = types.ApartmentStorageToDomain(ap)
-	if err = r.AddUserToApartment(ctx, a.ID, a.AdminID); err != nil {
+	if err = r.AddUserToApartment(ctx, a.AdminID, a.ID, tx); err != nil {
 		return nil, err
 	}
 
@@ -195,13 +197,22 @@ func (r *apartmentRepo) AcceptInvite(ctx context.Context, token string) error {
 }
 
 func (r *apartmentRepo) AddUserToApartment(
-	ctx context.Context, userId, aptId common.ID,
-) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
+	ctx context.Context, userId, aptId common.ID, tx *sql.Tx,
+) (
+	err error,
+) {
+	hasTx := true
+	if tx == nil {
+		hasTx = false
+		if tx, err = r.db.BeginTx(ctx, nil); err != nil {
+			return err
+		}
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
 
 	// Check if user exists
 	var exists bool
@@ -231,5 +242,8 @@ func (r *apartmentRepo) AddUserToApartment(
 		return err
 	}
 
+	if hasTx {
+		return nil
+	}
 	return tx.Commit()
 }
