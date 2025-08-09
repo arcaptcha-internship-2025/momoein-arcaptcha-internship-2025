@@ -65,7 +65,7 @@ func (a *Apartment) Validate() error {
 	if strings.TrimSpace(a.Address) == "" {
 		return errors.New("apartment address is required")
 	}
-	if a.UnitNumber <= 0 {
+	if a.UnitNumber < 0 {
 		return errors.New("unit number must be a positive integer")
 	}
 	if a.AdminID == common.NilID {

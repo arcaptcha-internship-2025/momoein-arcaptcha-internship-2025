@@ -86,6 +86,7 @@ func TestCreateApartment_Success(t *testing.T) {
 	a := &domain.Apartment{
 		ID:      common.NewRandomID(),
 		Name:    "Test Apt",
+		Address: "somewhere",
 		AdminID: common.NewRandomID(),
 	}
 
